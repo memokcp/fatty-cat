@@ -162,7 +162,7 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);dis
   <div class="hdr-right">
     <button class="sync-chip" onclick="manualSync()">
       <div class="sdot" id="sdot"></div>
-      <span id="slabel">GitHub</span>
+      <span id="slabel">Cloud</span>
     </button>
     <div class="hdr-clock" id="rtClock">--:--</div>
   </div>
@@ -170,8 +170,8 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);dis
 
 <!-- status bar (under header, above week) -->
 <div class="status-bar" id="statusBar" style="background:rgba(26,58,42,.5);">
-  <div class="status-txt" id="statusTxt">กำลังเชื่อมต่อ GitHub...</div>
-  <span class="status-action" onclick="openSettings()">⚙️ ตั้งค่า</span>
+  <div class="status-txt" id="statusTxt">กำลังเชื่อมต่อ Cloud...</div>
+  <span class="status-action" onclick="manualSync()">🔄 โหลดใหม่</span>
 </div>
 
 <div class="week-bar">
@@ -349,13 +349,16 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);dis
 <div class="toast" id="toast"></div>
 
 <script>
-// ── Config keys ──
-const LKEY='orchid_gh_v1';
-const CFG_KEY='orchid_gh_cfg';
+// ── JSONBin config (hardcoded) ──
+const LKEY='orchid_jb_v1';
+const JB_BIN='6a0c6cbf6877513b2799afa4';
+const JB_KEY='$2a$10$a9/5h0j1SV9/Cyb7EJ38f.n4hjjr2Q4Fpvws/z0CGNIzomGXE1euS';
+const JB_URL=`https://api.jsonbin.io/v3/b/${JB_BIN}`;
+const JB_HDR={'Content-Type':'application/json','X-Master-Key':JB_KEY,'X-Bin-Versioning':'false'};
+
 let records=JSON.parse(localStorage.getItem(LKEY)||'[]');
 let weekOffset=0;
 let _syncTimer=null;
-let ghSha=null; // current file SHA for updates
 
 const spKey={แคทลียา:'cattleya',แวนด้า:'vanda',พันธุ์แท้:'pure',หวาย:'rattan'};
 const spTag={แคทลียา:'tag-cat',แวนด้า:'tag-van',พันธุ์แท้:'tag-pur',หวาย:'tag-rat'};
@@ -364,62 +367,38 @@ const TH=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.�
 const PRICES={แคทลียา:80,แวนด้า:80,พันธุ์แท้:60,หวาย:27};
 const EMO={แคทลียา:'💗',แวนด้า:'💜',พันธุ์แท้:'🌼',หวาย:'🌿'};
 
-// ── GitHub config ──
-function getCfg(){return JSON.parse(localStorage.getItem(CFG_KEY)||'{}');}
-function hasCfg(){const c=getCfg();return!!(c.token&&c.repo&&c.branch&&c.file);}
-
-function getApiUrl(){
-  const c=getCfg();
-  return`https://api.github.com/repos/${c.repo}/contents/${c.file||'orchid_stock.json'}`;
-}
-function getHeaders(){
-  return{'Authorization':`token ${getCfg().token}`,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json'};
-}
-
-// ── GitHub sync ──
+// ── JSONBin sync ──
 async function ghLoad(){
-  if(!hasCfg()){setStatus('⚠️ ยังไม่ได้ตั้งค่า GitHub','warn');showSetupHint();return;}
   setSync('spin','กำลังโหลด...');
   try{
-    const res=await fetch(getApiUrl()+'?ref='+getCfg().branch,{headers:getHeaders()});
-    if(res.status===404){
-      setStatus('ยังไม่มีไฟล์ใน repo — บันทึกครั้งแรกเมื่อเพิ่มรายการ','ok');
-      setSync('ok','GitHub ✓');return;
-    }
+    const res=await fetch(JB_URL+'/latest',{headers:JB_HDR});
     if(!res.ok) throw new Error('HTTP '+res.status);
     const data=await res.json();
-    ghSha=data.sha;
-    const content=JSON.parse(atob(data.content.replace(/\n/g,'')));
+    const content=data.record;
     if(Array.isArray(content.records)){
       records=content.records;
       localStorage.setItem(LKEY,JSON.stringify(records));
       renderAll();
-      const t=content.lastSync?new Date(content.lastSync).toLocaleDateString('th-TH',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
-      setStatus(`☁️ ซิงค์กับ GitHub แล้ว · อัปเดต ${t}`,'ok');
-      setSync('ok','GitHub ✓');
-      showToast('☁️ โหลดข้อมูลจาก GitHub แล้ว');
+      const t=content.lastSync?new Date(content.lastSync).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'}):'';
+      setStatus(`☁️ ซิงค์แล้ว · ${t}`,'ok');
+      setSync('ok','Cloud ✓');
+      showToast('☁️ โหลดข้อมูลจาก Cloud แล้ว');
     }
   }catch(e){
-    setStatus('⚠️ เชื่อมต่อ GitHub ไม่ได้ — ใช้ข้อมูลในเครื่อง','err');
+    setStatus('⚠️ เชื่อมต่อ Cloud ไม่ได้ — ใช้ข้อมูลในเครื่อง','err');
     setSync('err','ออฟไลน์');
   }
 }
 
 async function ghSave(){
-  if(!hasCfg()) return;
   setSync('spin','กำลังซิงค์...');
   try{
     const payload={records,lastSync:new Date().toISOString()};
-    const content=btoa(unescape(encodeURIComponent(JSON.stringify(payload,null,2))));
-    const body={message:`sync: ${new Date().toLocaleString('th-TH')}`,content,branch:getCfg().branch||'main'};
-    if(ghSha) body.sha=ghSha;
-    const res=await fetch(getApiUrl(),{method:'PUT',headers:getHeaders(),body:JSON.stringify(body)});
+    const res=await fetch(JB_URL,{method:'PUT',headers:JB_HDR,body:JSON.stringify(payload)});
     if(!res.ok) throw new Error('HTTP '+res.status);
-    const data=await res.json();
-    ghSha=data.content?.sha||ghSha;
     const t=new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
-    setStatus(`☁️ บันทึกลง GitHub แล้ว · ${t}`,'ok');
-    setSync('ok','GitHub ✓');
+    setStatus(`☁️ บันทึกลง Cloud แล้ว · ${t}`,'ok');
+    setSync('ok','Cloud ✓');
   }catch(e){
     setStatus('⚠️ ซิงค์ไม่สำเร็จ — ข้อมูลบันทึกในเครื่องแล้ว','err');
     setSync('err','ซิงค์ไม่ได้');
@@ -434,31 +413,8 @@ function save(){
   _syncTimer=setTimeout(ghSave,1800);
 }
 function manualSync(){ghLoad();}
-
-// ── Settings ──
-function openSettings(){
-  const c=getCfg();
-  document.getElementById('cfg_token').value=c.token||'';
-  document.getElementById('cfg_repo').value=c.repo||'';
-  document.getElementById('cfg_branch').value=c.branch||'main';
-  document.getElementById('cfg_file').value=c.file||'orchid_stock.json';
-  document.getElementById('settingsModal').classList.add('open');
-}
-function saveSettings(){
-  const cfg={
-    token:document.getElementById('cfg_token').value.trim(),
-    repo:document.getElementById('cfg_repo').value.trim(),
-    branch:document.getElementById('cfg_branch').value.trim()||'main',
-    file:document.getElementById('cfg_file').value.trim()||'orchid_stock.json'
-  };
-  if(!cfg.token||!cfg.repo){showToast('⚠️ กรุณากรอก Token และ Repo');return;}
-  localStorage.setItem(CFG_KEY,JSON.stringify(cfg));
-  cm('settingsModal');
-  hideSetupHint();
-  document.getElementById('hdrSub').textContent=`ทุกวันเสาร์ · ${cfg.repo}`;
-  ghLoad();
-  showToast('✅ บันทึกการตั้งค่าแล้ว กำลังซิงค์...');
-}
+function openSettings(){}
+function saveSettings(){}
 
 // ── Status UI ──
 function setSync(s,label){
@@ -660,14 +616,10 @@ function startClock(){
 
 // ── Init ──
 updateWL();renderAll();startClock();
-if(!hasCfg()){
-  setStatus('⚠️ ยังไม่ได้ตั้งค่า GitHub — กด ⚙️ ตั้งค่า เพื่อเชื่อมต่อ','warn');
-  setSync('err','ตั้งค่า');
-  showSetupHint();
-} else {
-  document.getElementById('hdrSub').textContent=`ทุกวันเสาร์ · ${getCfg().repo}`;
-  ghLoad();
-}
+setStatus('☁️ กำลังโหลดจาก Cloud...','ok');
+document.getElementById('hdrSub').textContent='ทุกวันเสาร์ · Cloud Sync';
+hideSetupHint();
+ghLoad();
 </script>
 </body>
 </html>
