@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>เคลียร์สต็อกไม้เสีย</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&family=Playfair+Display:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{--gd:#1a3a2a;--gm:#2d6a4f;--gl:#52b788;--gp:#d8f3dc;--rp:#fce4e6;--lp:#ede9f8;--ap:#fdf3dc;--text:#1c2e22;--muted:#5a7262;--border:#d4e4d8;--card:#fff;--bg:#f2f7f3;--tab-h:62px;--hdr-h:56px;}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;overflow:hidden;}
+body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;}
+.hdr{height:var(--hdr-h);background:var(--gd);display:flex;align-items:center;justify-content:space-between;padding:0 16px;flex-shrink:0;z-index:10;}
+.hdr-left{display:flex;align-items:center;gap:10px;}
+.hdr-title{font-family:'Playfair Display',serif;font-size:17px;color:#fff;}
+.hdr-sub{font-size:11px;color:rgba(255,255,255,.5);}
+.hdr-right{display:flex;align-items:center;gap:8px;}
+.sync-chip{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.2);border-radius:20px;color:#fff;font-size:12px;padding:5px 11px;cursor:pointer;font-family:'Sarabun',sans-serif;display:flex;align-items:center;gap:5px;transition:all .15s;}
+.sync-chip:active{background:rgba(255,255,255,.25);}
+.sdot{width:7px;height:7px;border-radius:50%;background:#4ade80;flex-shrink:0;}
+.sdot.spin{background:#fbbf24;animation:sdotSpin 1s linear infinite;}
+.sdot.err{background:#f87171;}
+@keyframes sdotSpin{0%{box-shadow:0 0 0 2px rgba(251,191,36,.3)}50%{box-shadow:0 0 0 4px rgba(251,191,36,.1)}100%{box-shadow:0 0 0 2px rgba(251,191,36,.3)}}
+.hdr-clock{font-size:12px;color:rgba(255,255,255,.6);}
+.week-bar{background:var(--gm);padding:8px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.wk-btn{width:34px;height:34px;border-radius:50%;border:none;background:rgba(255,255,255,.2);color:#fff;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.wk-btn:active{background:rgba(255,255,255,.35);}
+.wk-info{text-align:center;display:flex;flex-direction:column;align-items:center;gap:2px;}
+.wk-label{font-size:14px;font-weight:600;color:#fff;display:flex;align-items:center;gap:7px;}
+.wk-sub{font-size:11px;color:rgba(255,255,255,.6);}
+.wk-dot{width:9px;height:9px;border-radius:50%;background:#4ade80;box-shadow:0 0 0 2px rgba(74,222,128,.3),0 0 8px rgba(74,222,128,.6);animation:glow 2s ease-in-out infinite;}
+@keyframes glow{0%,100%{box-shadow:0 0 0 2px rgba(74,222,128,.3),0 0 8px rgba(74,222,128,.5);}50%{box-shadow:0 0 0 4px rgba(74,222,128,.2),0 0 16px rgba(74,222,128,.8);}}
+.page{display:none;flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding-bottom:calc(var(--tab-h)+12px);}
+.page.active{display:block;}
+.tabs{height:var(--tab-h);background:var(--card);border-top:1px solid var(--border);display:flex;flex-shrink:0;position:relative;z-index:10;}
+.tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;border:none;background:transparent;cursor:pointer;font-family:'Sarabun',sans-serif;font-size:11px;color:var(--muted);padding:6px 2px;}
+.tab.active{color:var(--gm);}
+.tab-icon{font-size:22px;line-height:1;}
+.tab-bar{position:absolute;top:0;height:3px;background:var(--gm);border-radius:0 0 3px 3px;width:25%;transition:left .2s ease;}
+.status-bar{background:rgba(45,106,79,.25);margin:0;padding:7px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.status-txt{font-size:11px;color:rgba(255,255,255,.7);}
+.status-action{font-size:11px;color:#86efac;cursor:pointer;text-decoration:underline;}
+.rt-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px 12px 6px;}
+.rt-card{border-radius:12px;padding:12px 14px;}
+.rt-card.dark{background:var(--gd);}
+.rt-card.dark-red{background:#7f1d1d;}
+.rt-val{font-family:'Playfair Display',serif;font-size:26px;font-weight:700;line-height:1.1;}
+.rt-val.green{color:#4ade80;}.rt-val.red{color:#fca5a5;}
+.rt-lbl{font-size:11px;color:rgba(255,255,255,.55);margin-top:3px;}
+.sp-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:0 12px 12px;}
+.sp-ac{background:var(--card);border-radius:12px;border:1.5px solid var(--border);padding:13px 12px 11px;position:relative;overflow:hidden;}
+.sp-ac::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+.sp-ac.cat::before{background:linear-gradient(90deg,#c97b84,#e9a0b0);}
+.sp-ac.van::before{background:linear-gradient(90deg,#8b78c2,#b0a0e0);}
+.sp-ac.pur::before{background:linear-gradient(90deg,#e9a84c,#f5c97a);}
+.sp-ac.rat::before{background:linear-gradient(90deg,#2d6a4f,#52b788);}
+.sp-name{font-size:14px;font-weight:700;color:var(--gd);}
+.sp-cnt{font-size:22px;font-weight:700;color:var(--gm);font-family:'Playfair Display',serif;margin:3px 0 8px;}
+.sp-btns{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
+.spb{padding:7px 2px;border-radius:8px;border:none;cursor:pointer;font-family:'Sarabun',sans-serif;font-size:12px;font-weight:600;}
+.spb:active{opacity:.7;}
+.spb.keep{background:var(--gp);color:var(--gd);}
+.spb.drop{background:#fee2e2;color:#991b1b;}
+.filter-bar{display:flex;align-items:center;justify-content:space-between;padding:10px 12px 4px;}
+.fsel{padding:6px 8px;border-radius:20px;border:1px solid var(--border);background:var(--bg);font-family:'Sarabun',sans-serif;font-size:12px;color:var(--text);outline:none;}
+.bulk-bar{display:none;padding:7px 12px;background:#f0fdf4;border-bottom:1px solid var(--border);align-items:center;flex-wrap:wrap;gap:6px;}
+.bulk-bar.show{display:flex;}
+.sel-row{display:flex;align-items:center;gap:8px;padding:6px 12px 2px;}
+.log-list{padding:0 12px;}
+.log-item{background:var(--card);border-radius:10px;border:1px solid var(--border);margin-bottom:8px;overflow:hidden;}
+.log-item-head{display:flex;align-items:center;gap:8px;padding:9px 12px;border-bottom:1px solid #f0f4f1;}
+.log-item-body{padding:8px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.log-chk{width:18px;height:18px;accent-color:var(--gm);cursor:pointer;flex-shrink:0;}
+.sp-badge{display:inline-flex;align-items:center;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;}
+.tag-cat{background:var(--rp);color:#7a2d38;}.tag-van{background:var(--lp);color:#3d2d7a;}.tag-pur{background:var(--ap);color:#7a4d0d;}.tag-rat{background:var(--gp);color:var(--gd);}
+.st-badge{display:inline-flex;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;}
+.s-sold{background:#dcfce7;color:#166534;}.s-discard{background:#fee2e2;color:#991b1b;}.s-pending{background:#fef3c7;color:#92400e;}
+.log-date{font-size:11px;color:var(--muted);margin-left:auto;white-space:nowrap;}
+.log-actions{display:flex;gap:5px;flex-shrink:0;}
+.ic-btn{width:32px;height:32px;border-radius:8px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;}
+.ic-btn:active{opacity:.7;}
+.ic-edit{background:#eff6ff;color:#1d4ed8;}.ic-del{background:#fee2e2;color:#991b1b;}
+.empty-state{text-align:center;padding:3rem 1rem;color:var(--muted);}
+.stat-row{display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid #eef4ef;font-size:14px;}
+.stat-row:last-child{border-bottom:none;}
+.stat-lbl{color:var(--muted);}.stat-val{font-weight:700;}
+.sv-red{color:#dc2626;}.sv-green{color:var(--gm);}.sv-amber{color:#b45309;}
+.slbl{font-size:11px;font-weight:700;color:var(--muted);letter-spacing:.05em;padding:10px 12px 2px;}
+.stotal{margin:8px 12px 10px;background:#fee2e2;border-radius:10px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;}
+.card{background:var(--card);border-radius:14px;border:1px solid var(--border);overflow:hidden;margin:10px 12px 0;}
+.card-head{padding:11px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.card-title{font-size:14px;font-weight:600;color:var(--gd);}
+.pill{background:var(--gp);color:var(--gm);border-radius:20px;padding:2px 9px;font-size:11px;font-weight:600;}
+.wk-sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:12px 12px 6px;}
+.wkscard{border-radius:12px;padding:12px 14px;}
+.wkscard.c1{background:var(--gd);}.wkscard.c2{background:#7f1d1d;}
+.wksval{font-family:'Playfair Display',serif;font-size:24px;font-weight:700;line-height:1.1;}
+.wksval.green{color:#4ade80;}.wksval.red{color:#fca5a5;}
+.wkslbl{font-size:11px;color:rgba(255,255,255,.5);margin-top:3px;}
+.sp-sum-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--border);}
+.sp-sum-row:last-child{border-bottom:none;}
+.sp-sum-cnt{font-size:14px;font-weight:700;color:var(--gm);}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;align-items:flex-end;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--card);border-radius:20px 20px 0 0;width:100%;max-height:92vh;overflow-y:auto;animation:slideUp .25s ease;}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.mhandle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:10px auto 0;}
+.mhead{padding:12px 16px 10px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);}
+.mtitle{font-family:'Playfair Display',serif;font-size:16px;color:var(--gd);}
+.mclose{width:30px;height:30px;border-radius:8px;border:none;background:var(--bg);cursor:pointer;font-size:16px;color:var(--muted);display:flex;align-items:center;justify-content:center;}
+.mbody{padding:16px;}
+.mfoot{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;}
+.stepper{display:flex;align-items:center;justify-content:center;gap:16px;margin:14px 0;}
+.stepbtn{width:52px;height:52px;border-radius:50%;border:1.5px solid var(--border);background:var(--bg);font-size:28px;cursor:pointer;color:var(--text);display:flex;align-items:center;justify-content:center;}
+.stepbtn:active{background:var(--gp);}
+.qtyinp{font-family:'Playfair Display',serif;font-size:52px;font-weight:700;color:var(--gd);width:90px;text-align:center;border:none;background:transparent;outline:none;-moz-appearance:textfield;}
+.qtyinp::-webkit-inner-spin-button,.qtyinp::-webkit-outer-spin-button{-webkit-appearance:none;}
+.prow{display:flex;justify-content:space-between;align-items:center;background:var(--bg);border-radius:10px;padding:10px 14px;margin-bottom:8px;}
+.trow{display:flex;justify-content:space-between;align-items:center;background:var(--gp);border-radius:10px;padding:10px 14px;margin-bottom:14px;}
+.tval{font-family:'Playfair Display',serif;font-size:20px;font-weight:700;color:var(--gd);}
+.fl{display:flex;flex-direction:column;gap:5px;margin-bottom:12px;}
+.lbl{font-size:12px;color:var(--muted);font-weight:500;}
+.inp,.sel,.ta{width:100%;padding:11px 12px;border:1px solid var(--border);border-radius:9px;font-family:'Sarabun',sans-serif;font-size:15px;color:var(--text);background:var(--bg);outline:none;}
+.inp:focus,.sel:focus,.ta:focus{border-color:var(--gm);background:#fff;}
+.ta{resize:vertical;min-height:70px;}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.eprow{display:flex;flex-wrap:wrap;gap:7px;}
+.ep{padding:8px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--bg);font-family:'Sarabun',sans-serif;font-size:13px;cursor:pointer;color:var(--text);}
+.ep.active{border-color:var(--gm);background:var(--gp);color:var(--gd);font-weight:600;}
+.ehist{margin-top:12px;border-top:1px solid var(--border);padding-top:10px;}
+.ehtitle{font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.04em;margin-bottom:8px;}
+.ehitem{display:flex;gap:8px;padding:7px 10px;border-radius:8px;background:var(--bg);margin-bottom:5px;font-size:12px;}
+.hdot{width:7px;height:7px;border-radius:50%;background:#e9a84c;flex-shrink:0;margin-top:3px;}
+.hby{color:var(--gm);font-weight:600;}
+.htm{color:var(--muted);white-space:nowrap;flex-shrink:0;}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:10px 18px;border-radius:9px;border:none;cursor:pointer;font-family:'Sarabun',sans-serif;font-size:14px;font-weight:500;}
+.btn:active{opacity:.75;}
+.btn-p{background:var(--gm);color:#fff;}
+.btn-o{background:transparent;color:var(--muted);border:1px solid var(--border);}
+.btn-r{background:#dc2626;color:#fff;}
+.btn-sm{padding:6px 12px;font-size:12px;border-radius:7px;}
+.btn-full{width:100%;justify-content:center;padding:13px;}
+.cbody{padding:20px 16px 12px;text-align:center;}
+.cicon{font-size:38px;margin-bottom:8px;}
+.cmsg{font-size:15px;line-height:1.7;color:var(--text);}
+.toast{position:fixed;bottom:calc(var(--tab-h)+14px);left:50%;transform:translateX(-50%) translateY(60px);background:var(--gd);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:500;z-index:999;white-space:nowrap;opacity:0;transition:all .3s;pointer-events:none;}
+.toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+.setup-hint{font-size:12px;color:var(--muted);background:#fff8e7;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;margin:8px 12px 0;line-height:1.6;}
+.setup-hint a{color:var(--gm);}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-left">
+    <div style="font-size:22px;">🌸</div>
+    <div>
+      <div class="hdr-title">เคลียร์สต็อกไม้เสีย</div>
+      <div class="hdr-sub" id="hdrSub">ทุกวันเสาร์</div>
+    </div>
+  </div>
+  <div class="hdr-right">
+    <button class="sync-chip" onclick="manualSync()">
+      <div class="sdot" id="sdot"></div>
+      <span id="slabel">GitHub</span>
+    </button>
+    <div class="hdr-clock" id="rtClock">--:--</div>
+  </div>
+</div>
+
+<!-- status bar (under header, above week) -->
+<div class="status-bar" id="statusBar" style="background:rgba(26,58,42,.5);">
+  <div class="status-txt" id="statusTxt">กำลังเชื่อมต่อ GitHub...</div>
+  <span class="status-action" onclick="openSettings()">⚙️ ตั้งค่า</span>
+</div>
+
+<div class="week-bar">
+  <button class="wk-btn" onclick="changeWeek(-1)">‹</button>
+  <div class="wk-info">
+    <div class="wk-label">
+      <span id="weekLabel">สัปดาห์ที่ 21</span>
+      <span class="wk-dot" id="wkDot"></span>
+    </div>
+    <div class="wk-sub" id="weekSub">19–25 พ.ค. 2568</div>
+  </div>
+  <button class="wk-btn" onclick="changeWeek(1)">›</button>
+</div>
+
+<!-- PAGE: HOME -->
+<div class="page active" id="page-home">
+  <div class="rt-grid">
+    <div class="rt-card dark"><div class="rt-val green" id="rt-qty">0</div><div class="rt-lbl">⚡ ต้นวันนี้</div></div>
+    <div class="rt-card dark-red"><div class="rt-val red" id="rt-revenue">฿0</div><div class="rt-lbl">💸 ขาดทุนวันนี้</div></div>
+  </div>
+  <div id="setupHint" class="setup-hint" style="display:none;">
+    ⚠️ ยังไม่ได้ตั้งค่า GitHub — กด <strong>⚙️ ตั้งค่า</strong> ที่แถบบน เพื่อใส่ Token และ Repo แล้วข้อมูลจะซิงค์ cloud ได้ครับ
+  </div>
+  <div style="padding:6px 12px 8px;font-size:12px;font-weight:600;color:var(--muted);">🌿 บันทึกรายการ</div>
+  <div class="sp-grid">
+    <div class="sp-ac cat"><div style="font-size:22px;margin-bottom:3px;">💗</div><div class="sp-name">แคทลียา</div><div class="sp-cnt" id="cnt-cattleya">0</div><div class="sp-btns"><button class="spb keep" onclick="quickAdd('แคทลียา','cattleya','จำหน่ายแล้ว')">📦 เก็บ</button><button class="spb drop" onclick="quickAdd('แคทลียา','cattleya','ทิ้ง/กำจัด')">🗑 ทิ้ง</button></div></div>
+    <div class="sp-ac van"><div style="font-size:22px;margin-bottom:3px;">💜</div><div class="sp-name">แวนด้า</div><div class="sp-cnt" id="cnt-vanda">0</div><div class="sp-btns"><button class="spb keep" onclick="quickAdd('แวนด้า','vanda','จำหน่ายแล้ว')">📦 เก็บ</button><button class="spb drop" onclick="quickAdd('แวนด้า','vanda','ทิ้ง/กำจัด')">🗑 ทิ้ง</button></div></div>
+    <div class="sp-ac pur"><div style="font-size:22px;margin-bottom:3px;">🌼</div><div class="sp-name">พันธุ์แท้</div><div class="sp-cnt" id="cnt-pure">0</div><div class="sp-btns"><button class="spb keep" onclick="quickAdd('พันธุ์แท้','pure','จำหน่ายแล้ว')">📦 เก็บ</button><button class="spb drop" onclick="quickAdd('พันธุ์แท้','pure','ทิ้ง/กำจัด')">🗑 ทิ้ง</button></div></div>
+    <div class="sp-ac rat"><div style="font-size:22px;margin-bottom:3px;">🌿</div><div class="sp-name">หวาย</div><div class="sp-cnt" id="cnt-rattan">0</div><div class="sp-btns"><button class="spb keep" onclick="quickAdd('หวาย','rattan','จำหน่ายแล้ว')">📦 เก็บ</button><button class="spb drop" onclick="quickAdd('หวาย','rattan','ทิ้ง/กำจัด')">🗑 ทิ้ง</button></div></div>
+  </div>
+</div>
+
+<!-- PAGE: LOG -->
+<div class="page" id="page-log">
+  <div class="filter-bar">
+    <div style="font-size:14px;font-weight:600;color:var(--gd);">📋 รายการ <span class="pill" id="logCount">0</span></div>
+    <div style="display:flex;gap:6px;">
+      <select class="fsel" id="filterSp" onchange="renderLog()"><option value="">ทุกพันธุ์</option><option value="แคทลียา">แคทลียา</option><option value="แวนด้า">แวนด้า</option><option value="พันธุ์แท้">พันธุ์แท้</option><option value="หวาย">หวาย</option></select>
+      <select class="fsel" id="filterSt" onchange="renderLog()"><option value="">ทุกสถานะ</option><option value="จำหน่ายแล้ว">เก็บ</option><option value="ทิ้ง/กำจัด">ทิ้ง</option></select>
+    </div>
+  </div>
+  <div class="bulk-bar" id="bulkBar">
+    <span style="font-size:13px;font-weight:600;color:var(--gd);" id="selCount">0 รายการ</span>
+    <div style="display:flex;gap:6px;margin-left:auto;">
+      <button class="btn btn-sm" style="background:#dcfce7;color:#166534;" onclick="bulkStatus('จำหน่ายแล้ว')">📦 เก็บ</button>
+      <button class="btn btn-sm" style="background:#fee2e2;color:#991b1b;" onclick="bulkStatus('ทิ้ง/กำจัด')">🗑 ทิ้ง</button>
+      <button class="btn btn-sm btn-r" onclick="bulkDelete()">ลบ</button>
+    </div>
+  </div>
+  <div class="sel-row">
+    <input type="checkbox" id="chkAll" onchange="toggleAll(this.checked)" style="width:18px;height:18px;accent-color:var(--gm);cursor:pointer;">
+    <label for="chkAll" style="font-size:13px;color:var(--muted);cursor:pointer;">เลือกทั้งหมด</label>
+  </div>
+  <div class="log-list" id="logList"></div>
+</div>
+
+<!-- PAGE: STATS -->
+<div class="page" id="page-stats">
+  <div class="slbl">สัปดาห์นี้</div>
+  <div class="card" style="margin-top:0;"><div id="statsWeek"></div></div>
+  <div class="slbl" style="margin-top:6px;">ทั้งหมด (All Time)</div>
+  <div class="card" style="margin-top:0;"><div id="statsAll"></div></div>
+  <div id="statsTotalCard"></div>
+</div>
+
+<!-- PAGE: SUMMARY -->
+<div class="page" id="page-summary">
+  <div class="wk-sum-grid">
+    <div class="wkscard c1"><div class="wksval green" id="wk-qty">0</div><div class="wkslbl">ต้นสัปดาห์นี้</div></div>
+    <div class="wkscard c2"><div class="wksval red" id="wk-revenue">฿0</div><div class="wkslbl">💸 ขาดทุนสัปดาห์</div></div>
+  </div>
+  <div class="card" style="margin-top:0;"><div class="card-head"><div class="card-title">📦 แยกตามสายพันธุ์</div></div><div id="spSumList"></div></div>
+  <div class="card">
+    <div class="card-head"><div class="card-title">📝 หมายเหตุสัปดาห์</div></div>
+    <div style="padding:12px 14px;">
+      <textarea class="ta" id="weekNote" placeholder="บันทึกปัญหา, สภาพอากาศ, ข้อสังเกต..." style="font-size:14px;min-height:90px;"></textarea>
+      <button class="btn btn-p btn-full" style="margin-top:8px;" onclick="saveNote()">บันทึกหมายเหตุ</button>
+    </div>
+  </div>
+</div>
+
+<nav class="tabs">
+  <div class="tab-bar" id="tabBar"></div>
+  <button class="tab active" id="tab-home" onclick="goTab('home')"><div class="tab-icon">🏠</div><span>หน้าหลัก</span></button>
+  <button class="tab" id="tab-log" onclick="goTab('log')"><div class="tab-icon">📋</div><span>รายการ</span></button>
+  <button class="tab" id="tab-stats" onclick="goTab('stats')"><div class="tab-icon">📉</div><span>ความเสียหาย</span></button>
+  <button class="tab" id="tab-summary" onclick="goTab('summary')"><div class="tab-icon">📅</div><span>สรุป</span></button>
+</nav>
+
+<!-- ⚙️ Settings modal -->
+<div class="modal-overlay" id="settingsModal" onclick="cob(event,'settingsModal')">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mhead"><div class="mtitle">⚙️ ตั้งค่า GitHub Sync</div><button class="mclose" onclick="cm('settingsModal')">✕</button></div>
+    <div class="mbody">
+      <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px;line-height:1.7;color:var(--gd);">
+        <strong>วิธีสร้าง GitHub Token</strong><br>
+        1. ไปที่ <strong>github.com → Settings → Developer settings</strong><br>
+        2. เลือก <strong>Personal access tokens → Tokens (classic)</strong><br>
+        3. กด <strong>Generate new token</strong> เลือก scope: <code style="background:#e0fce7;padding:1px 5px;border-radius:4px;">repo</code><br>
+        4. Copy token มาวางด้านล่าง
+      </div>
+      <div class="fl">
+        <label class="lbl">GitHub Personal Access Token *</label>
+        <input type="password" class="inp" id="cfg_token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx">
+      </div>
+      <div class="fl">
+        <label class="lbl">Repository (owner/repo) *</label>
+        <input type="text" class="inp" id="cfg_repo" placeholder="เช่น myname/orchid-data">
+      </div>
+      <div class="fl">
+        <label class="lbl">Branch</label>
+        <input type="text" class="inp" id="cfg_branch" placeholder="main" value="main">
+      </div>
+      <div class="fl">
+        <label class="lbl">ชื่อไฟล์ข้อมูล</label>
+        <input type="text" class="inp" id="cfg_file" placeholder="orchid_stock.json" value="orchid_stock.json">
+      </div>
+    </div>
+    <div class="mfoot">
+      <button class="btn btn-o" onclick="cm('settingsModal')">ยกเลิก</button>
+      <button class="btn btn-p" onclick="saveSettings()">💾 บันทึกและซิงค์</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add modal -->
+<div class="modal-overlay" id="addModal" onclick="cob(event,'addModal')">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mhead"><div class="mtitle" id="addTitle">บันทึกรายการ</div><button class="mclose" onclick="cm('addModal')">✕</button></div>
+    <div class="mbody" style="text-align:center;">
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px;">
+        <span style="font-size:15px;font-weight:600;color:var(--gd);" id="addSpB"></span>
+        <span style="font-size:12px;font-weight:600;padding:3px 12px;border-radius:20px;" id="addStB"></span>
+      </div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:4px;">จำนวนต้น</div>
+      <div class="stepper">
+        <button class="stepbtn" onclick="stepQ(-1)">−</button>
+        <input type="number" class="qtyinp" id="qtyD" value="1" min="1" inputmode="numeric" oninput="onQI(this.value)" onchange="onQI(this.value)">
+        <button class="stepbtn" onclick="stepQ(1)">+</button>
+      </div>
+      <div id="pRow" class="prow"><span style="font-size:14px;color:var(--muted);">ราคาต่อต้น</span><span style="font-size:15px;font-weight:600;color:var(--gd);" id="pDisp">—</span></div>
+      <div id="tRow" class="trow"><span style="font-size:14px;color:var(--gm);font-weight:500;">รวม</span><span class="tval" id="tDisp">—</span></div>
+      <input type="hidden" id="f_sp"><input type="hidden" id="f_spKey"><input type="hidden" id="f_stat">
+      <input type="hidden" id="f_qty" value="1"><input type="hidden" id="f_price" value="0"><input type="hidden" id="f_date">
+    </div>
+    <div class="mfoot"><button class="btn btn-o" onclick="cm('addModal')">ยกเลิก</button><button class="btn btn-p" id="addSaveBtn" onclick="saveRecord()">💾 บันทึก</button></div>
+  </div>
+</div>
+
+<!-- Edit modal -->
+<div class="modal-overlay" id="editModal" onclick="cob(event,'editModal')">
+  <div class="modal">
+    <div class="mhandle"></div>
+    <div class="mhead"><div class="mtitle">✏️ แก้ไขรายการ</div><button class="mclose" onclick="cm('editModal')">✕</button></div>
+    <div class="mbody">
+      <input type="hidden" id="e_id">
+      <div class="fl"><label class="lbl">สายพันธุ์</label><div class="eprow" id="editPills"><button class="ep" onclick="selEP(this,'แคทลียา','cattleya')">💗 แคทลียา</button><button class="ep" onclick="selEP(this,'แวนด้า','vanda')">💜 แวนด้า</button><button class="ep" onclick="selEP(this,'พันธุ์แท้','pure')">🌼 พันธุ์แท้</button><button class="ep" onclick="selEP(this,'หวาย','rattan')">🌿 หวาย</button></div><input type="hidden" id="e_sp"><input type="hidden" id="e_spKey"></div>
+      <div class="row2"><div class="fl"><label class="lbl">จำนวน (ต้น)</label><input type="number" class="inp" id="e_qty" min="1" inputmode="numeric"></div><div class="fl"><label class="lbl">ราคา/ต้น (฿)</label><input type="number" class="inp" id="e_price" min="0" inputmode="numeric"></div></div>
+      <div class="fl"><label class="lbl">สถานะ</label><select class="sel" id="e_stat"><option value="จำหน่ายแล้ว">📦 เก็บ/จำหน่าย</option><option value="ทิ้ง/กำจัด">🗑 ทิ้ง/กำจัด</option><option value="รอดำเนินการ">⏳ รอดำเนินการ</option></select></div>
+      <div class="row2"><div class="fl"><label class="lbl">วันที่</label><input type="date" class="inp" id="e_date"></div><div class="fl"><label class="lbl">ผู้แก้ไข</label><input type="text" class="inp" id="e_editor" placeholder="ชื่อ"></div></div>
+      <div class="fl"><label class="lbl">หมายเหตุ</label><textarea class="ta" id="e_note"></textarea></div>
+      <div id="editHist"></div>
+    </div>
+    <div class="mfoot"><button class="btn btn-o" onclick="cm('editModal')">ยกเลิก</button><button class="btn btn-p" onclick="saveEdit()">💾 บันทึก</button></div>
+  </div>
+</div>
+
+<!-- Confirm modal -->
+<div class="modal-overlay" id="confirmModal" style="z-index:300;">
+  <div class="modal"><div class="mhandle"></div><div class="cbody"><div class="cicon">🗑</div><div class="cmsg" id="confirmMsg"></div></div><div class="mfoot"><button class="btn btn-o" onclick="closeConfirm()">ยกเลิก</button><button class="btn btn-r" id="confirmOkBtn" onclick="confirmOk()">ลบรายการ</button></div></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Config keys ──
+const LKEY='orchid_gh_v1';
+const CFG_KEY='orchid_gh_cfg';
+let records=JSON.parse(localStorage.getItem(LKEY)||'[]');
+let weekOffset=0;
+let _syncTimer=null;
+let ghSha=null; // current file SHA for updates
+
+const spKey={แคทลียา:'cattleya',แวนด้า:'vanda',พันธุ์แท้:'pure',หวาย:'rattan'};
+const spTag={แคทลียา:'tag-cat',แวนด้า:'tag-van',พันธุ์แท้:'tag-pur',หวาย:'tag-rat'};
+const stTag={จำหน่ายแล้ว:'s-sold','ทิ้ง/กำจัด':'s-discard',รอดำเนินการ:'s-pending'};
+const TH=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const PRICES={แคทลียา:80,แวนด้า:80,พันธุ์แท้:60,หวาย:27};
+const EMO={แคทลียา:'💗',แวนด้า:'💜',พันธุ์แท้:'🌼',หวาย:'🌿'};
+
+// ── GitHub config ──
+function getCfg(){return JSON.parse(localStorage.getItem(CFG_KEY)||'{}');}
+function hasCfg(){const c=getCfg();return!!(c.token&&c.repo&&c.branch&&c.file);}
+
+function getApiUrl(){
+  const c=getCfg();
+  return`https://api.github.com/repos/${c.repo}/contents/${c.file||'orchid_stock.json'}`;
+}
+function getHeaders(){
+  return{'Authorization':`token ${getCfg().token}`,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json'};
+}
+
+// ── GitHub sync ──
+async function ghLoad(){
+  if(!hasCfg()){setStatus('⚠️ ยังไม่ได้ตั้งค่า GitHub','warn');showSetupHint();return;}
+  setSync('spin','กำลังโหลด...');
+  try{
+    const res=await fetch(getApiUrl()+'?ref='+getCfg().branch,{headers:getHeaders()});
+    if(res.status===404){
+      setStatus('ยังไม่มีไฟล์ใน repo — บันทึกครั้งแรกเมื่อเพิ่มรายการ','ok');
+      setSync('ok','GitHub ✓');return;
+    }
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    ghSha=data.sha;
+    const content=JSON.parse(atob(data.content.replace(/\n/g,'')));
+    if(Array.isArray(content.records)){
+      records=content.records;
+      localStorage.setItem(LKEY,JSON.stringify(records));
+      renderAll();
+      const t=content.lastSync?new Date(content.lastSync).toLocaleDateString('th-TH',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+      setStatus(`☁️ ซิงค์กับ GitHub แล้ว · อัปเดต ${t}`,'ok');
+      setSync('ok','GitHub ✓');
+      showToast('☁️ โหลดข้อมูลจาก GitHub แล้ว');
+    }
+  }catch(e){
+    setStatus('⚠️ เชื่อมต่อ GitHub ไม่ได้ — ใช้ข้อมูลในเครื่อง','err');
+    setSync('err','ออฟไลน์');
+  }
+}
+
+async function ghSave(){
+  if(!hasCfg()) return;
+  setSync('spin','กำลังซิงค์...');
+  try{
+    const payload={records,lastSync:new Date().toISOString()};
+    const content=btoa(unescape(encodeURIComponent(JSON.stringify(payload,null,2))));
+    const body={message:`sync: ${new Date().toLocaleString('th-TH')}`,content,branch:getCfg().branch||'main'};
+    if(ghSha) body.sha=ghSha;
+    const res=await fetch(getApiUrl(),{method:'PUT',headers:getHeaders(),body:JSON.stringify(body)});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data=await res.json();
+    ghSha=data.content?.sha||ghSha;
+    const t=new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+    setStatus(`☁️ บันทึกลง GitHub แล้ว · ${t}`,'ok');
+    setSync('ok','GitHub ✓');
+  }catch(e){
+    setStatus('⚠️ ซิงค์ไม่สำเร็จ — ข้อมูลบันทึกในเครื่องแล้ว','err');
+    setSync('err','ซิงค์ไม่ได้');
+  }
+}
+
+function saveLocal(){localStorage.setItem(LKEY,JSON.stringify(records));}
+function save(){
+  saveLocal();
+  clearTimeout(_syncTimer);
+  setSync('spin','กำลังซิงค์...');
+  _syncTimer=setTimeout(ghSave,1800);
+}
+function manualSync(){ghLoad();}
+
+// ── Settings ──
+function openSettings(){
+  const c=getCfg();
+  document.getElementById('cfg_token').value=c.token||'';
+  document.getElementById('cfg_repo').value=c.repo||'';
+  document.getElementById('cfg_branch').value=c.branch||'main';
+  document.getElementById('cfg_file').value=c.file||'orchid_stock.json';
+  document.getElementById('settingsModal').classList.add('open');
+}
+function saveSettings(){
+  const cfg={
+    token:document.getElementById('cfg_token').value.trim(),
+    repo:document.getElementById('cfg_repo').value.trim(),
+    branch:document.getElementById('cfg_branch').value.trim()||'main',
+    file:document.getElementById('cfg_file').value.trim()||'orchid_stock.json'
+  };
+  if(!cfg.token||!cfg.repo){showToast('⚠️ กรุณากรอก Token และ Repo');return;}
+  localStorage.setItem(CFG_KEY,JSON.stringify(cfg));
+  cm('settingsModal');
+  hideSetupHint();
+  document.getElementById('hdrSub').textContent=`ทุกวันเสาร์ · ${cfg.repo}`;
+  ghLoad();
+  showToast('✅ บันทึกการตั้งค่าแล้ว กำลังซิงค์...');
+}
+
+// ── Status UI ──
+function setSync(s,label){
+  const d=document.getElementById('sdot');const l=document.getElementById('slabel');
+  d.className='sdot'+(s==='spin'?' spin':s==='err'?' err':'');
+  l.textContent=label;
+}
+function setStatus(msg,type){
+  const el=document.getElementById('statusTxt');if(el)el.textContent=msg;
+  const bar=document.getElementById('statusBar');
+  if(bar){bar.style.background=type==='err'?'rgba(127,29,29,.4)':type==='warn'?'rgba(120,80,0,.3)':'rgba(26,58,42,.5)';}
+}
+function showSetupHint(){const el=document.getElementById('setupHint');if(el)el.style.display='block';}
+function hideSetupHint(){const el=document.getElementById('setupHint');if(el)el.style.display='none';}
+
+// ── Tab nav ──
+function goTab(t){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(b=>b.classList.remove('active'));
+  document.getElementById('page-'+t).classList.add('active');
+  document.getElementById('tab-'+t).classList.add('active');
+  const i=['home','log','stats','summary'].indexOf(t);
+  document.getElementById('tabBar').style.left=(i*25)+'%';
+  renderAll();
+}
+
+// ── Week ──
+function getWB(o){
+  const now=new Date(),d=now.getDay(),s=new Date(now);
+  s.setDate(now.getDate()-(d===0?1:d-6)+o*7);s.setHours(0,0,0,0);
+  const f=new Date(s);f.setDate(s.getDate()+6);f.setHours(23,59,59,999);
+  return{sat:s,fri:f};
+}
+function getWN(d){const j=new Date(d.getFullYear(),0,1);return Math.ceil((((d-j)/86400000)+j.getDay()+1)/7);}
+function fD(d){const dt=new Date(d);return`${dt.getDate()} ${TH[dt.getMonth()]} ${dt.getFullYear()+543}`;}
+function fDT(iso){const d=new Date(iso);return`${d.getDate()} ${TH[d.getMonth()]} ${d.getFullYear()+543} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;}
+function updateWL(){
+  const{sat,fri}=getWB(weekOffset);
+  document.getElementById('weekLabel').textContent=`สัปดาห์ที่ ${getWN(sat)}`;
+  document.getElementById('weekSub').textContent=`${sat.getDate()} ${TH[sat.getMonth()]}–${fri.getDate()} ${TH[fri.getMonth()]} ${fri.getFullYear()+543}`;
+  const dot=document.getElementById('wkDot');
+  if(dot){const t=new Date().toISOString().split('T')[0];const s=sat.toISOString().split('T')[0];const f=fri.toISOString().split('T')[0];dot.style.display=(t>=s&&t<=f)?'inline-block':'none';}
+}
+function changeWeek(d){weekOffset+=d;updateWL();renderAll();}
+function getWR(){const{sat,fri}=getWB(weekOffset);return records.filter(r=>{const d=new Date(r.date);return d>=sat&&d<=fri;});}
+function getTR(){const t=new Date().toISOString().split('T')[0];return records.filter(r=>r.date===t);}
+
+// ── Render ──
+function renderLog(){
+  const wk=getWR(),fSp=document.getElementById('filterSp').value,fSt=document.getElementById('filterSt').value;
+  const f=wk.filter(r=>(!fSp||r.sp===fSp)&&(!fSt||r.status===fSt));
+  document.getElementById('logCount').textContent=f.length;
+  const el=document.getElementById('logList');
+  if(!f.length){el.innerHTML=`<div class="empty-state"><div style="font-size:40px">🌱</div><div style="font-size:15px;font-weight:500;color:var(--text);margin-top:8px;">ยังไม่มีรายการ</div><div style="font-size:13px;margin-top:4px;">กดปุ่มเก็บหรือทิ้งที่หน้าหลัก</div></div>`;return;}
+  el.innerHTML=f.map(r=>{
+    const tot=r.qty*r.price;
+    const ed=r.editLog?.length?`<span style="font-size:10px;background:#eff6ff;color:#1d4ed8;border-radius:4px;padding:1px 5px;margin-left:4px;">แก้×${r.editLog.length}</span>`:'';
+    return`<div class="log-item" id="row-${r.id}"><div class="log-item-head"><input type="checkbox" class="log-chk row-chk" data-id="${r.id}" onchange="onRC()"><span class="sp-badge ${spTag[r.sp]||'tag-rat'}">${r.sp}</span><span class="st-badge ${stTag[r.status]||'s-pending'}">${r.status}</span><span class="log-date">${fD(r.date)}</span></div><div class="log-item-body"><div style="flex:1;"><div style="font-size:15px;font-weight:700;color:var(--gd);">${r.qty} ต้น${ed}</div><div style="font-size:12px;color:var(--muted);margin-top:1px;">${r.detail||''}${tot>0?' · ฿'+tot.toLocaleString():''}</div></div><div class="log-actions"><button class="ic-btn ic-edit" onclick="openEdit('${r.id}')">✏️</button><button class="ic-btn ic-del" onclick="deleteRecord('${r.id}')">🗑</button></div></div></div>`;
+  }).join('');
+}
+
+function renderRealtime(){
+  const t=getTR();
+  document.getElementById('rt-qty').textContent=t.reduce((s,r)=>s+r.qty,0);
+  document.getElementById('rt-revenue').textContent='฿'+t.reduce((s,r)=>s+r.qty*r.price,0).toLocaleString();
+  const b={};t.forEach(r=>b[r.sp]=(b[r.sp]||0)+r.qty);
+  ['แคทลียา','แวนด้า','พันธุ์แท้','หวาย'].forEach(sp=>{const e=document.getElementById('cnt-'+spKey[sp]);if(e)e.textContent=b[sp]||0;});
+}
+
+function renderStats(){
+  const wk=getWR(),rev=wk.reduce((s,r)=>s+r.qty*r.price,0),tot=wk.reduce((s,r)=>s+r.qty,0);
+  document.getElementById('wk-qty').textContent=tot;
+  document.getElementById('wk-revenue').textContent='฿'+rev.toLocaleString();
+  const b={};wk.forEach(r=>b[r.sp]=(b[r.sp]||0)+r.qty);
+  document.getElementById('spSumList').innerHTML=['แคทลียา','แวนด้า','พันธุ์แท้','หวาย'].map(sp=>`<div class="sp-sum-row"><div style="font-size:14px;">${EMO[sp]} ${sp}</div><div class="sp-sum-cnt">${b[sp]||0} ต้น</div></div>`).join('');
+  if(!wk.length){document.getElementById('statsWeek').innerHTML=`<div class="stat-row"><span class="stat-lbl">ยังไม่มีข้อมูล</span></div>`;document.getElementById('statsAll').innerHTML=`<div class="stat-row"><span class="stat-lbl">ยังไม่มีข้อมูล</span></div>`;document.getElementById('statsTotalCard').innerHTML='';return;}
+  const dQ=wk.filter(r=>r.status==='ทิ้ง/กำจัด').reduce((s,r)=>s+r.qty,0);
+  const dL=wk.filter(r=>r.status==='ทิ้ง/กำจัด').reduce((s,r)=>s+r.qty*r.price,0);
+  const kQ=wk.filter(r=>r.status==='จำหน่ายแล้ว').reduce((s,r)=>s+r.qty,0);
+  const kL=wk.filter(r=>r.status==='จำหน่ายแล้ว').reduce((s,r)=>s+r.qty*r.price,0);
+  const bl={};wk.forEach(r=>bl[r.sp]=(bl[r.sp]||0)+r.qty*r.price);
+  const ws=Object.entries(bl).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('statsWeek').innerHTML=`<div class="stat-row"><span class="stat-lbl">🗑 ทิ้ง/กำจัด</span><span class="stat-val sv-red">${dQ} ต้น</span></div><div class="stat-row"><span class="stat-lbl">💸 มูลค่าที่ทิ้ง</span><span class="stat-val sv-red">฿${dL.toLocaleString()}</span></div><div class="stat-row"><span class="stat-lbl">📦 เก็บ/จำหน่าย</span><span class="stat-val sv-green">${kQ} ต้น</span></div><div class="stat-row"><span class="stat-lbl">💸 มูลค่าที่เก็บ</span><span class="stat-val sv-green">฿${kL.toLocaleString()}</span></div><div class="stat-row"><span class="stat-lbl">🌿 เสียหายมากสุด</span><span class="stat-val sv-amber">${ws?ws[0]+' ฿'+ws[1].toLocaleString():'—'}</span></div><div class="stat-row"><span class="stat-lbl" style="font-weight:700;">💸 ขาดทุนรวม</span><span class="stat-val sv-red" style="font-size:16px;">฿${rev.toLocaleString()}</span></div>`;
+  const adQ=records.filter(r=>r.status==='ทิ้ง/กำจัด').reduce((s,r)=>s+r.qty,0);
+  const adL=records.filter(r=>r.status==='ทิ้ง/กำจัด').reduce((s,r)=>s+r.qty*r.price,0);
+  const atL=records.reduce((s,r)=>s+r.qty*r.price,0);
+  const atQ=records.reduce((s,r)=>s+r.qty,0);
+  const abl={};records.forEach(r=>abl[r.sp]=(abl[r.sp]||0)+r.qty*r.price);
+  const aw=Object.entries(abl).sort((a,b)=>b[1]-a[1])[0];
+  document.getElementById('statsAll').innerHTML=`<div class="stat-row"><span class="stat-lbl">🌿 ต้นทั้งหมด</span><span class="stat-val">${atQ} ต้น</span></div><div class="stat-row"><span class="stat-lbl">🗑 ทิ้งสะสม</span><span class="stat-val sv-red">${adQ} ต้น · ฿${adL.toLocaleString()}</span></div><div class="stat-row"><span class="stat-lbl">🌿 เสียหายมากสุด</span><span class="stat-val sv-amber">${aw?aw[0]+' ฿'+aw[1].toLocaleString():'—'}</span></div>`;
+  document.getElementById('statsTotalCard').innerHTML=`<div class="stotal"><span style="font-size:14px;font-weight:700;color:#991b1b;">💸 ขาดทุนสะสมรวม</span><span style="font-size:18px;font-weight:700;color:#dc2626;">฿${atL.toLocaleString()}</span></div>`;
+}
+
+function renderAll(){renderLog();renderStats();renderRealtime();}
+
+// ── Add modal ──
+let _q=1;
+function stepQ(d){_q=Math.max(1,_q+d);document.getElementById('qtyD').value=_q;document.getElementById('f_qty').value=_q;updT();}
+function onQI(v){_q=Math.max(1,parseInt(v)||1);document.getElementById('f_qty').value=_q;updT();}
+function updT(){const p=parseFloat(document.getElementById('f_price').value)||0;document.getElementById('tDisp').textContent=p>0?'฿'+(p*_q).toLocaleString():'—';}
+function quickAdd(sp,key,status){
+  _q=1;
+  document.getElementById('f_sp').value=sp;document.getElementById('f_spKey').value=key;document.getElementById('f_stat').value=status;
+  document.getElementById('f_date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('f_qty').value=1;document.getElementById('qtyD').value=1;
+  const p=PRICES[sp]||0;document.getElementById('f_price').value=p;
+  const isD=status==='ทิ้ง/กำจัด';
+  const sb=document.getElementById('addStB');
+  sb.textContent=isD?'🗑 ทิ้ง':'📦 เก็บ';sb.style.background=isD?'#fee2e2':'#dcfce7';sb.style.color=isD?'#991b1b':'#166634';
+  document.getElementById('addSpB').textContent=EMO[sp]+' '+sp;
+  document.getElementById('addTitle').textContent=isD?'🗑 บันทึกการทิ้ง':'📦 บันทึกการเก็บ';
+  document.getElementById('pDisp').textContent=p>0?'฿'+p:'—';
+  document.getElementById('pRow').style.display=(isD||p===0)?'none':'flex';
+  document.getElementById('tRow').style.display=(isD||p===0)?'none':'flex';
+  updT();
+  const btn=document.getElementById('addSaveBtn');btn.style.background=isD?'#dc2626':'';btn.textContent=isD?'🗑 บันทึก':'💾 บันทึก';
+  document.getElementById('addModal').classList.add('open');
+}
+function saveRecord(){
+  const sp=document.getElementById('f_sp').value,qty=parseInt(document.getElementById('f_qty').value)||0;
+  if(!sp||qty<1){showToast('⚠️ เกิดข้อผิดพลาด');return;}
+  records.unshift({id:Date.now().toString(),sp,spKey:spKey[sp],detail:'',qty,price:parseFloat(document.getElementById('f_price').value)||0,status:document.getElementById('f_stat').value,staff:'',date:document.getElementById('f_date').value||new Date().toISOString().split('T')[0],note:'',created:new Date().toISOString()});
+  save();cm('addModal');renderAll();showToast(`✅ บันทึก ${sp} ${qty} ต้น · ☁️ กำลังซิงค์...`);
+}
+
+// ── Edit modal ──
+function openEdit(id){
+  const r=records.find(r=>String(r.id)===String(id));if(!r)return;
+  document.getElementById('e_id').value=id;
+  document.getElementById('e_sp').value=r.sp;document.getElementById('e_spKey').value=r.spKey||spKey[r.sp]||'';
+  document.getElementById('e_qty').value=r.qty;document.getElementById('e_price').value=r.price;
+  document.getElementById('e_stat').value=r.status;document.getElementById('e_date').value=r.date;
+  document.getElementById('e_note').value=r.note||'';document.getElementById('e_editor').value='';
+  document.querySelectorAll('#editPills .ep').forEach(p=>p.classList.remove('active'));
+  const idx=['แคทลียา','แวนด้า','พันธุ์แท้','หวาย'].indexOf(r.sp);
+  const ap=document.querySelectorAll('#editPills .ep')[idx];if(ap)ap.classList.add('active');
+  const hist=r.editLog||[];
+  document.getElementById('editHist').innerHTML=hist.length
+    ?`<div class="ehist"><div class="ehtitle">📋 ประวัติแก้ไข (${hist.length} ครั้ง)</div>${hist.slice().reverse().map(h=>`<div class="ehitem"><div class="hdot"></div><div style="flex:1;"><div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span class="hby">${h.editor||'ไม่ระบุ'}</span><span class="htm">${fDT(h.at)}</span></div><div>${h.changes.map(c=>`<span style="color:var(--muted);">${c.field}:</span> <s style="color:#aaa;">${c.from}</s>→<strong>${c.to}</strong>`).join(' · ')}</div></div></div>`).join('')}</div>`
+    :`<div class="ehist"><div class="ehtitle">📋 ประวัติแก้ไข</div><div style="font-size:12px;color:var(--muted);">ยังไม่เคยแก้ไข</div></div>`;
+  document.getElementById('editModal').classList.add('open');
+}
+function selEP(btn,sp,key){document.querySelectorAll('#editPills .ep').forEach(p=>p.classList.remove('active'));btn.classList.add('active');document.getElementById('e_sp').value=sp;document.getElementById('e_spKey').value=key;}
+function saveEdit(){
+  const id=document.getElementById('e_id').value;
+  const r=records.find(r=>String(r.id)===String(id));if(!r)return;
+  const nSp=document.getElementById('e_sp').value||r.sp;
+  const nQ=parseInt(document.getElementById('e_qty').value)||r.qty;
+  const nP=parseFloat(document.getElementById('e_price').value)||0;
+  const nSt=document.getElementById('e_stat').value;
+  const nDt=document.getElementById('e_date').value||r.date;
+  const nN=document.getElementById('e_note').value.trim();
+  const ed=document.getElementById('e_editor').value.trim()||'ไม่ระบุ';
+  const fm={sp:'สายพันธุ์',qty:'จำนวน',price:'ราคา',status:'สถานะ',date:'วันที่',note:'หมายเหตุ'};
+  const ch=[];
+  [[`sp`,r.sp,nSp],[`qty`,r.qty,nQ],[`price`,r.price,nP],[`status`,r.status,nSt],[`date`,r.date,nDt],[`note`,r.note||'',nN]]
+    .forEach(([f,fr,to])=>{if(String(fr)!==String(to))ch.push({field:fm[f],from:String(fr)||'—',to:String(to)||'—'});});
+  if(!ch.length){showToast('ℹ️ ไม่มีการเปลี่ยนแปลง');return;}
+  r.sp=nSp;r.spKey=spKey[nSp]||r.spKey;r.qty=nQ;r.price=nP;r.status=nSt;r.date=nDt;r.note=nN;
+  if(!r.editLog)r.editLog=[];
+  r.editLog.push({at:new Date().toISOString(),editor:ed,changes:ch});
+  save();cm('editModal');renderAll();showToast(`✅ แก้ไข ${ch.length} รายการ · ☁️ กำลังซิงค์...`);
+}
+
+// ── Delete ──
+let _delId=null,_bulkIds=[];
+function deleteRecord(id){
+  _delId=id;const r=records.find(r=>String(r.id)===String(id));
+  document.getElementById('confirmMsg').innerHTML=`ต้องการลบ<br><strong style="color:var(--gd);">${r?r.sp+' '+r.qty+' ต้น':'รายการนี้'}</strong>?<br><small style="color:var(--muted);">ไม่สามารถกู้คืนได้</small>`;
+  document.getElementById('confirmOkBtn').onclick=confirmOk;
+  document.getElementById('confirmModal').classList.add('open');
+}
+function closeConfirm(){_delId=null;document.getElementById('confirmModal').classList.remove('open');document.getElementById('confirmOkBtn').onclick=confirmOk;}
+function confirmOk(){records=records.filter(r=>String(r.id)!==String(_delId));save();closeConfirm();renderAll();showToast('🗑 ลบเรียบร้อย · ☁️ กำลังซิงค์...');}
+
+// ── Bulk ──
+function gSel(){return[...document.querySelectorAll('.row-chk:checked')].map(c=>c.dataset.id);}
+function onRC(){const a=document.querySelectorAll('.row-chk'),c=document.querySelectorAll('.row-chk:checked');const ca=document.getElementById('chkAll');ca.checked=c.length===a.length&&a.length>0;ca.indeterminate=c.length>0&&c.length<a.length;updBulk();}
+function toggleAll(v){document.querySelectorAll('.row-chk').forEach(c=>c.checked=v);updBulk();}
+function updBulk(){const ids=gSel(),bar=document.getElementById('bulkBar');if(ids.length>0){bar.classList.add('show');document.getElementById('selCount').textContent=ids.length+' รายการ';}else bar.classList.remove('show');}
+function bulkStatus(st){gSel().forEach(id=>{const r=records.find(r=>String(r.id)===String(id));if(r)r.status=st;});save();renderAll();showToast(`✅ เปลี่ยนสถานะ → ${st} · ☁️ กำลังซิงค์...`);}
+function bulkDelete(){_bulkIds=gSel();if(!_bulkIds.length)return;document.getElementById('confirmMsg').innerHTML=`ต้องการลบ <strong style="color:var(--gd);">${_bulkIds.length} รายการ</strong>?<br><small style="color:var(--muted);">ไม่สามารถกู้คืนได้</small>`;document.getElementById('confirmOkBtn').onclick=cbDel;document.getElementById('confirmModal').classList.add('open');}
+function cbDel(){records=records.filter(r=>!_bulkIds.includes(String(r.id)));save();closeConfirm();renderAll();showToast(`🗑 ลบ ${_bulkIds.length} รายการ · ☁️ กำลังซิงค์...`);_bulkIds=[];}
+
+// ── Modals ──
+function cm(id){document.getElementById(id).classList.remove('open');}
+function cob(e,id){if(e.target.id===id)cm(id);}
+
+// ── Notes ──
+function saveNote(){localStorage.setItem('orchid_note_'+getWK(),document.getElementById('weekNote').value);showToast('📝 บันทึกแล้ว');}
+function getWK(){const{sat}=getWB(weekOffset);return sat.toISOString().split('T')[0];}
+
+// ── Toast & clock ──
+function showToast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2800);}
+function startClock(){
+  function tick(){const now=new Date(),h=String(now.getHours()).padStart(2,'0'),m=String(now.getMinutes()).padStart(2,'0');const el=document.getElementById('rtClock');if(el)el.textContent=`${h}:${m}`;renderRealtime();}
+  tick();setInterval(tick,1000);
+}
+
+// ── Init ──
+updateWL();renderAll();startClock();
+if(!hasCfg()){
+  setStatus('⚠️ ยังไม่ได้ตั้งค่า GitHub — กด ⚙️ ตั้งค่า เพื่อเชื่อมต่อ','warn');
+  setSync('err','ตั้งค่า');
+  showSetupHint();
+} else {
+  document.getElementById('hdrSub').textContent=`ทุกวันเสาร์ · ${getCfg().repo}`;
+  ghLoad();
+}
+</script>
+</body>
+</html>
