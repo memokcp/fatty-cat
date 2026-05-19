@@ -243,7 +243,29 @@ body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--text);dis
     <div class="wkscard c1"><div class="wksval green" id="wk-qty">0</div><div class="wkslbl">ต้นสัปดาห์นี้</div></div>
     <div class="wkscard c2"><div class="wksval red" id="wk-revenue">฿0</div><div class="wkslbl">💸 ขาดทุนสัปดาห์</div></div>
   </div>
-  <div class="card" style="margin-top:0;"><div class="card-head"><div class="card-title">📦 แยกตามสายพันธุ์</div></div><div id="spSumList"></div></div>
+  <div class="card" style="margin-top:0;"><div class="card-head"><div class="card-title">📦 แยกตามสายพันธุ์ (สัปดาห์นี้)</div></div><div id="spSumList"></div></div>
+
+  <!-- All time summary -->
+  <div class="slbl" style="padding-top:14px;">📊 สรุปรวมทั้งหมด (All Time)</div>
+  <div class="wk-sum-grid" style="padding-top:0;">
+    <div class="wkscard" style="background:#2d4a5a;">
+      <div class="wksval green" id="at-qty">0</div>
+      <div class="wkslbl">ต้นทั้งหมด</div>
+    </div>
+    <div class="wkscard c2">
+      <div class="wksval red" id="at-loss">฿0</div>
+      <div class="wkslbl">💸 ขาดทุนสะสม</div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:0;">
+    <div class="card-head"><div class="card-title">📦 แยกตามสายพันธุ์ (ทั้งหมด)</div></div>
+    <div id="atSpList"></div>
+  </div>
+  <div class="card" style="margin-top:8px;">
+    <div class="card-head"><div class="card-title">📉 ทิ้ง vs เก็บ (ทั้งหมด)</div></div>
+    <div id="atStatList"></div>
+  </div>
+
   <div class="card">
     <div class="card-head"><div class="card-title">📝 หมายเหตุสัปดาห์</div></div>
     <div style="padding:12px 14px;">
@@ -443,10 +465,12 @@ function goTab(t){
 
 // ── Week ──
 function getWB(o){
-  const now=new Date(),d=now.getDay(),s=new Date(now);
-  s.setDate(now.getDate()-(d===0?1:d-6)+o*7);s.setHours(0,0,0,0);
-  const f=new Date(s);f.setDate(s.getDate()+6);f.setHours(23,59,59,999);
-  return{sat:s,fri:f};
+  const now=new Date(),d=now.getDay();
+  const mon=new Date(now);
+  mon.setDate(now.getDate()-(d===0?6:d-1)+o*7);
+  mon.setHours(0,0,0,0);
+  const sun=new Date(mon);sun.setDate(mon.getDate()+6);sun.setHours(23,59,59,999);
+  return{sat:mon,fri:sun};
 }
 function getWN(d){const j=new Date(d.getFullYear(),0,1);return Math.ceil((((d-j)/86400000)+j.getDay()+1)/7);}
 function fD(d){const dt=new Date(d);return`${dt.getDate()} ${TH[dt.getMonth()]} ${dt.getFullYear()+543}`;}
@@ -506,6 +530,17 @@ function renderStats(){
   const aw=Object.entries(abl).sort((a,b)=>b[1]-a[1])[0];
   document.getElementById('statsAll').innerHTML=`<div class="stat-row"><span class="stat-lbl">🌿 ต้นทั้งหมด</span><span class="stat-val">${atQ} ต้น</span></div><div class="stat-row"><span class="stat-lbl">🗑 ทิ้งสะสม</span><span class="stat-val sv-red">${adQ} ต้น · ฿${adL.toLocaleString()}</span></div><div class="stat-row"><span class="stat-lbl">🌿 เสียหายมากสุด</span><span class="stat-val sv-amber">${aw?aw[0]+' ฿'+aw[1].toLocaleString():'—'}</span></div>`;
   document.getElementById('statsTotalCard').innerHTML=`<div class="stotal"><span style="font-size:14px;font-weight:700;color:#991b1b;">💸 ขาดทุนสะสมรวม</span><span style="font-size:18px;font-weight:700;color:#dc2626;">฿${atL.toLocaleString()}</span></div>`;
+
+  // All-time on summary page
+  const atEl=document.getElementById('at-qty');if(atEl)atEl.textContent=atQ;
+  const atLEl=document.getElementById('at-loss');if(atLEl)atLEl.textContent='฿'+atL.toLocaleString();
+  const absp={};records.forEach(r=>absp[r.sp]=(absp[r.sp]||0)+r.qty);
+  const atSpEl=document.getElementById('atSpList');
+  if(atSpEl)atSpEl.innerHTML=['แคทลียา','แวนด้า','พันธุ์แท้','หวาย'].map(sp=>`<div class="sp-sum-row"><div style="font-size:14px;">${EMO[sp]} ${sp}</div><div class="sp-sum-cnt">${absp[sp]||0} ต้น</div></div>`).join('');
+  const akQ=records.filter(r=>r.status==='จำหน่ายแล้ว').reduce((s,r)=>s+r.qty,0);
+  const akL=records.filter(r=>r.status==='จำหน่ายแล้ว').reduce((s,r)=>s+r.qty*r.price,0);
+  const atStEl=document.getElementById('atStatList');
+  if(atStEl)atStEl.innerHTML=`<div class="stat-row"><span class="stat-lbl">📦 เก็บ/จำหน่าย</span><span class="stat-val sv-green">${akQ} ต้น · ฿${akL.toLocaleString()}</span></div><div class="stat-row"><span class="stat-lbl">🗑 ทิ้ง/กำจัด</span><span class="stat-val sv-red">${adQ} ต้น · ฿${adL.toLocaleString()}</span></div><div class="stat-row"><span class="stat-lbl">🌿 เสียหายมากสุด</span><span class="stat-val sv-amber">${aw?aw[0]+' ฿'+aw[1].toLocaleString():'—'}</span></div>`;
 }
 
 function renderAll(){renderLog();renderStats();renderRealtime();}
