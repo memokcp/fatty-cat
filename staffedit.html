@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>แก้ไขยอดพนักงาน — คชาธาร</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Sarabun',sans-serif}
+body{background:#f4f5f7;color:#1a1a1a;padding:12px;max-width:800px;margin:0 auto}
+h1{font-size:18px;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.sub{font-size:12px;color:#888;margin-bottom:14px}
+.week-nav{display:flex;align-items:center;gap:8px;background:#fff;padding:8px;border-radius:10px;border:1px solid #e5e5e5;margin-bottom:14px}
+.week-btn{background:#f0f0f0;border:1px solid #ddd;border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;font-family:'Sarabun',sans-serif}
+.week-btn:hover{background:#e5e5e5}
+.week-label{flex:1;text-align:center;font-weight:700;font-size:14px}
+.status{font-size:13px;padding:8px 12px;border-radius:8px;margin-bottom:12px;text-align:center;display:none}
+.emp-card{background:#fff;border:1px solid #e5e5e5;border-radius:12px;padding:14px 16px;margin-bottom:12px}
+.emp-head{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.emp-avatar{width:38px;height:38px;border-radius:50%;background:#e8f0fe;color:#1565c0;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px}
+.emp-name{font-size:15px;font-weight:700}
+.emp-meta{font-size:11px;color:#888}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:12px;font-weight:600;color:#555}
+.field input{border:1px solid #ddd;border-radius:8px;padding:9px 10px;font-size:14px;font-family:'Sarabun',sans-serif}
+.field input:focus{outline:none;border-color:#1565c0}
+.field.plus input{color:#2e7d32}
+.field.minus input{color:#c62828}
+.field.note{grid-column:1/3}
+.save-btn{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);background:#2e7d32;color:#fff;border:none;border-radius:30px;padding:14px 40px;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 16px rgba(46,125,50,.4);font-family:'Sarabun',sans-serif;z-index:100}
+.save-btn:disabled{background:#aaa;box-shadow:none}
+.loading{text-align:center;padding:40px;color:#888}
+.pad{height:70px}
+</style>
+</head>
+<body>
+<h1><i class="ti ti-cash-register" style="color:#2e7d32"></i> แก้ไขยอดพนักงาน</h1>
+<div class="sub">คชาธาร — กรอกโบนัส (+บาท), รายการหัก (-บาท) และหมายเหตุ ของสัปดาห์นี้</div>
+
+<div class="week-nav">
+  <button class="week-btn" onclick="changeWeek(-1)"><i class="ti ti-chevron-left"></i></button>
+  <div class="week-label" id="week-label">...</div>
+  <button class="week-btn" onclick="changeWeek(1)"><i class="ti ti-chevron-right"></i></button>
+</div>
+
+<div class="status" id="status"></div>
+<div id="content"><div class="loading"><i class="ti ti-loader-2"></i> กำลังโหลดข้อมูล...</div></div>
+<div class="pad"></div>
+<button class="save-btn" id="saveBtn" onclick="saveData()" disabled>💾 บันทึก</button>
+
+<script>
+const GAS_URL='https://script.google.com/macros/s/AKfycbzVg1knuvCTwpriqmQogYTBhVpoNVy9f321Kf-5R4EwUoalF8pUO5rR5Q6WaHpLOq45/exec';
+const DEFAULT_EMPLOYEES=[
+  {id:'e1',name:'แพน'},{id:'e2',name:'น้านาท'},{id:'e3',name:'ป้าจิบ'},{id:'e4',name:'พี่บอย'},
+  {id:'e5',name:'น้ำ'},{id:'e6',name:'ลุย'},{id:'e7',name:'กาก่า'},{id:'e8',name:'นุ๊ก'},
+  {id:'e9',name:'สมคิด'},{id:'e10',name:'ปาย'},{id:'e11',name:'วิน'},{id:'e12',name:'วาวาย'}
+];
+let employees=DEFAULT_EMPLOYEES;
+let weekData={};
+let currentWeekStart=getMondayOf(new Date());
+let loaded=false;
+
+function getMondayOf(d){const dt=new Date(d);const day=dt.getDay();const diff=day===0?-6:1-day;dt.setDate(dt.getDate()+diff);dt.setHours(0,0,0,0);return dt;}
+function weekKey(m){const y=m.getFullYear();const mo=String(m.getMonth()+1).padStart(2,'0');const d=String(m.getDate()).padStart(2,'0');return y+'-'+mo+'-'+d;}
+function parseWeekKey(key){if(!key)return null;const s=String(key).trim();const m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m)return new Date(+m[1],+m[2]-1,+m[3]);const d=new Date(s);if(!isNaN(d))return new Date(d.getFullYear(),d.getMonth(),d.getDate());return null;}
+
+function setStatus(msg,color){const el=document.getElementById('status');if(!msg){el.style.display='none';return;}el.style.display='block';el.textContent=msg;el.style.background=color||'#e8f0fe';el.style.color=color==='#ffebee'?'#c62828':(color==='#e8f5e9'?'#2e7d32':'#1565c0');}
+
+function fmtWeek(m){
+  const sat=new Date(m);sat.setDate(sat.getDate()+5);
+  const f=d=>`${d.getDate()}/${d.getMonth()+1}/${(d.getFullYear()+543).toString().slice(-2)}`;
+  return `สัปดาห์ ${f(m)} – ${f(sat)}`;
+}
+
+function loadFromSheets(){
+  setStatus('🔄 กำลังโหลด...','#e8f0fe');
+  const cb='_load_'+Date.now();
+  window[cb]=function(data){
+    try{
+      if(data.employees&&data.employees.length)employees=data.employees.map(e=>({id:e.id,name:e.name}));
+      if(data.weekData){
+        const norm={};
+        Object.keys(data.weekData).forEach(k=>{
+          let nk=k;
+          if(k.length>12){const p=k.split(' ');try{const d=new Date(p[1]+' '+p[2]+' '+p[3]);nk=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}catch(e){}}
+          const incoming=data.weekData[k];
+          const hasData=obj=>Object.values(obj||{}).some(ed=>ed&&((ed.workhrs&&ed.workhrs.some(h=>h>0))||(ed.present&&ed.present.some(p=>p))||ed.bonus||ed.deduct));
+          if(norm[nk]){if(hasData(incoming)&&!hasData(norm[nk]))norm[nk]=incoming;}else{norm[nk]=incoming;}
+        });
+        weekData=norm;
+      }
+      loaded=true;
+      setStatus('✅ โหลดสำเร็จ','#e8f5e9');
+      setTimeout(()=>setStatus(''),2000);
+      render();
+      document.getElementById('saveBtn').disabled=false;
+    }catch(e){setStatus('❌ '+e.message,'#ffebee');}
+    delete window[cb];const s=document.getElementById('_s_'+cb);if(s)s.remove();
+  };
+  const s=document.createElement('script');s.id='_s_'+cb;
+  s.src=`${GAS_URL}?action=load&callback=${cb}&t=${Date.now()}`;
+  s.onerror=()=>setStatus('❌ โหลดไม่ได้ ตรวจอินเทอร์เน็ต','#ffebee');
+  document.head.appendChild(s);
+}
+
+function render(){
+  const key=weekKey(currentWeekStart);
+  document.getElementById('week-label').textContent=fmtWeek(currentWeekStart);
+  const wd=weekData[key]||{};
+  let html='';
+  employees.forEach(emp=>{
+    const ed=wd[emp.id]||{};
+    const bonus=ed.bonus||'';
+    const deduct=ed.deduct||'';
+    const note=ed.note||'';
+    html+=`<div class="emp-card">
+      <div class="emp-head">
+        <div class="emp-avatar">${emp.name.slice(0,2)}</div>
+        <div><div class="emp-name">${emp.name}</div><div class="emp-meta">${emp.id}</div></div>
+      </div>
+      <div class="field-row">
+        <div class="field plus">
+          <label><i class="ti ti-plus" style="font-size:11px"></i> โบนัส/เพิ่ม (บาท)</label>
+          <input type="number" min="0" placeholder="0" value="${bonus}" data-emp="${emp.id}" data-field="bonus">
+        </div>
+        <div class="field minus">
+          <label><i class="ti ti-minus" style="font-size:11px"></i> รายการหัก (บาท)</label>
+          <input type="number" min="0" placeholder="0" value="${deduct}" data-emp="${emp.id}" data-field="deduct">
+        </div>
+        <div class="field note">
+          <label><i class="ti ti-note" style="font-size:11px"></i> หมายเหตุ</label>
+          <input type="text" placeholder="เช่น เบิกล่วงหน้า, โบนัสขยัน" value="${note}" data-emp="${emp.id}" data-field="note">
+        </div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('content').innerHTML=html;
+}
+
+function collectInputs(){
+  const key=weekKey(currentWeekStart);
+  if(!weekData[key])weekData[key]={};
+  document.querySelectorAll('input[data-emp]').forEach(inp=>{
+    const eid=inp.dataset.emp,field=inp.dataset.field;
+    if(!weekData[key][eid])weekData[key][eid]={present:[false,false,false,false,false,false,false],workhrs:[0,0,0,0,0,0,0],ot:[0,0,0,0,0,0,0],bonus:0,deduct:0,lateDeduct:0,bonusNote:'',deductNote:'',note:''};
+    if(field==='note')weekData[key][eid].note=inp.value;
+    else weekData[key][eid][field]=+inp.value||0;
+  });
+}
+
+function changeWeek(dir){
+  collectInputs();
+  currentWeekStart=new Date(currentWeekStart);
+  currentWeekStart.setDate(currentWeekStart.getDate()+dir*7);
+  render();
+}
+
+let isSaving=false;
+function saveData(){
+  if(isSaving||!loaded)return;
+  collectInputs();
+  isSaving=true;
+  document.getElementById('saveBtn').disabled=true;
+  setStatus('☁️ กำลังบันทึก...','#e8f0fe');
+  // บันทึกเฉพาะสัปดาห์ปัจจุบัน (batch 1 สัปดาห์)
+  const key=weekKey(currentWeekStart);
+  const batch={};batch[key]=weekData[key];
+  const cb='_save_'+Date.now();let timer=null;
+  function cleanup(){clearTimeout(timer);delete window[cb];const s=document.getElementById('_s_'+cb);if(s)s.remove();isSaving=false;document.getElementById('saveBtn').disabled=false;}
+  window[cb]=function(d){
+    cleanup();
+    if(d&&d.success){setStatus('✅ บันทึกสำเร็จ! ข้อมูลจะแสดงใน stafftable ด้วย','#e8f5e9');setTimeout(()=>setStatus(''),3500);}
+    else{setStatus('❌ บันทึกไม่สำเร็จ: '+((d&&d.error)||'ไม่ทราบสาเหตุ'),'#ffebee');}
+  };
+  const s=document.createElement('script');s.id='_s_'+cb;
+  s.src=`${GAS_URL}?action=saveWeekBatch&callback=${cb}&data=${encodeURIComponent(JSON.stringify(batch))}&t=${Date.now()}`;
+  s.onerror=()=>{cleanup();setStatus('❌ บันทึกไม่สำเร็จ (network)','#ffebee');};
+  timer=setTimeout(()=>{cleanup();setStatus('❌ timeout','#ffebee');},30000);
+  document.head.appendChild(s);
+}
+
+loadFromSheets();
+</script>
+</body>
+</html>
