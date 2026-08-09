@@ -1,0 +1,2113 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ตารางงานพนักงาน</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.31.0/dist/tabler-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;background:#f5f5f5;color:#1a1a1a;font-size:14px}
+.container{max-width:1200px;margin:0 auto;padding:1rem}
+h1{font-size:20px;font-weight:600;margin-bottom:1rem;color:#1a1a1a}
+h3{font-size:15px;font-weight:600;margin-bottom:.75rem;color:#1a1a1a}
+.tab-row{display:flex;gap:4px;margin-bottom:1rem;flex-wrap:wrap;background:#fff;padding:8px;border-radius:10px;border:1px solid #e5e5e5}
+.tab{padding:7px 16px;border:1px solid #ddd;border-radius:8px;font-size:13px;cursor:pointer;background:transparent;color:#666;font-family:'Sarabun',sans-serif}
+.tab.active{background:#1a73e8;color:#fff;border-color:#1a73e8}
+.tab:hover:not(.active){background:#f0f0f0}
+.card{background:#fff;border:1px solid #e5e5e5;border-radius:10px;padding:1rem 1.25rem;margin-bottom:1rem}
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:1rem}
+@media(max-width:600px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
+.stat{background:#f9f9f9;border-radius:8px;padding:.75rem 1rem;border:1px solid #eee}
+.stat-label{font-size:12px;color:#888;margin-bottom:4px}
+.stat-value{font-size:20px;font-weight:600;color:#1a1a1a}
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}
+th{font-size:11px;font-weight:600;color:#666;text-align:center;padding:6px 3px;border-bottom:2px solid #eee;white-space:nowrap;background:#fafafa}
+th.name-col{text-align:left;width:80px}
+td{padding:3px 2px;border-bottom:1px solid #f0f0f0;text-align:center;vertical-align:middle}
+td.name-col{text-align:left;font-weight:600;font-size:12px;color:#1a1a1a;padding-left:6px}
+td.total-col{font-weight:600;color:#2e7d32}
+td.pay-col{font-weight:600;color:#1a1a1a}
+td.sso-col{font-size:11px;color:#e65100}
+td.skip-col{font-size:11px;color:#999;font-style:italic}
+tr.hrs-row td{background:#f7f9ff}
+tr.ot-row td{background:#fff8e1}
+tr.skip-week td{opacity:.5}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#fafafa}
+tr.hrs-row:hover td{background:#eef2ff}
+tr.ot-row:hover td{background:#fff3cd}
+.chk{width:16px;height:16px;cursor:pointer;accent-color:#2e7d32}
+.day-input{width:42px;font-size:11px;text-align:center;padding:2px 2px;border:1px solid #ddd;border-radius:4px;background:#fff;font-family:'Sarabun',sans-serif}
+.day-input:focus{outline:none;border-color:#1a73e8}
+.day-input.partial{background:#fff8e1;color:#8D6E63;border-color:#FF8F00;font-weight:600}
+.day-input.late{background:#ffebee;color:#b71c1c;border-color:#ef9a9a;font-weight:600}
+.day-input.full{background:#e8f5e9;color:#1b5e20;border-color:#81c784;font-weight:600}
+.ot-input{width:42px;font-size:11px;text-align:center;padding:2px 2px;border:1px solid #ddd;border-radius:4px;background:#fff;font-family:'Sarabun',sans-serif}
+.ot-input:focus{outline:none;border-color:#f57c00}
+.ot-input.has-value{background:#fff3e0;color:#e65100;border-color:#ffb74d;font-weight:600}
+input[type=number]{font-size:12px;text-align:center;padding:2px;border:1px solid #ddd;border-radius:4px;background:#fff;font-family:'Sarabun',sans-serif}
+input[type=number]:focus{outline:none;border-color:#1a73e8}
+input[type=text]{font-size:13px;padding:6px 10px;border:1px solid #ddd;border-radius:6px;width:100%;font-family:'Sarabun',sans-serif}
+input[type=text]:focus{outline:none;border-color:#1a73e8}
+select{font-size:13px;padding:6px 10px;border:1px solid #ddd;border-radius:6px;width:100%;font-family:'Sarabun',sans-serif;background:#fff}
+select:focus{outline:none;border-color:#1a73e8}
+.note-input{width:100%;font-size:11px;padding:2px 4px;border:1px solid #ddd;border-radius:4px;font-family:'Sarabun',sans-serif}
+.note-input:focus{outline:none;border-color:#1a73e8}
+.badge{display:inline-block;font-size:10px;padding:1px 6px;border-radius:8px;font-weight:600}
+.badge-salary{background:#e3f2fd;color:#0d47a1}
+.badge-daily{background:#e8f5e9;color:#1b5e20}
+.badge-sso{background:#fff3e0;color:#e65100}
+.badge-biweek{background:#ede7f6;color:#311b92}
+.badge-eom{background:#e8f5e9;color:#1b5e20}
+.btn-row{display:flex;gap:8px;margin-top:.75rem;flex-wrap:wrap}
+.btn-primary{background:#2e7d32;color:#fff;border:none;padding:8px 18px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Sarabun',sans-serif}
+.btn-primary:hover{background:#1b5e20}
+.btn-sec{background:#fff;color:#555;border:1px solid #ddd;padding:8px 14px;border-radius:8px;font-size:13px;cursor:pointer;font-family:'Sarabun',sans-serif}
+.btn-sec:hover{background:#f5f5f5}
+.btn-info{background:#1a73e8;color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Sarabun',sans-serif}
+.btn-info:hover{background:#1557b0}
+.btn-danger{background:#fff;color:#c62828;border:1px solid #ffcdd2;padding:6px 10px;border-radius:6px;font-size:13px;cursor:pointer;font-family:'Sarabun',sans-serif}
+.btn-danger:hover{background:#ffebee}
+.emp-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid #f0f0f0}
+.emp-row:last-child{border-bottom:none}
+.avatar{width:36px;height:36px;border-radius:50%;background:#e3f2fd;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#0d47a1;flex-shrink:0}
+.week-nav{display:flex;align-items:center;gap:8px;margin-bottom:1rem}
+.week-label{font-size:15px;font-weight:600;color:#1a1a1a;flex:1;text-align:center}
+.week-btn{padding:6px 12px;border:1px solid #ddd;border-radius:8px;font-size:14px;cursor:pointer;background:#fff;color:#555;font-family:'Sarabun',sans-serif}
+.week-btn:hover{background:#f5f5f5}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:12px;color:#666}
+.edit-form{background:#f0f7ff;border:1px solid #90caf9;border-radius:8px;padding:12px;margin-top:4px;margin-bottom:4px}
+.edit-form .field label{font-size:11px}
+.edit-form input,.edit-form select{font-size:12px;padding:5px 8px}
+.edit-save-btn{font-size:12px;padding:6px 14px;background:#1a73e8;color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;font-family:'Sarabun',sans-serif}
+.edit-cancel-btn{font-size:12px;padding:6px 14px;background:#fff;color:#555;border:1px solid #ddd;border-radius:6px;cursor:pointer;font-family:'Sarabun',sans-serif}
+.info-box{display:inline-flex;align-items:center;background:#e8f5e9;border:1px solid #a5d6a7;border-radius:20px;padding:4px 12px;margin-bottom:8px;font-size:12px;color:#2e7d32;line-height:1.5}
+.info-box.warn{background:#fff8e1;border-color:#ffe082;color:#f57f17}
+.legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:10px;font-size:11px;color:#888;background:#fafafa;padding:8px 12px;border-radius:8px;border:1px solid #eee}
+.legend-item{display:flex;align-items:center;gap:4px}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+.summary-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #f0f0f0}
+.summary-row:last-child{border-bottom:none}
+.row-label{font-size:9px;color:#aaa;display:block;letter-spacing:.3px}
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center}
+.modal-backdrop.show{display:flex}
+.modal-box{background:#fff;border-radius:14px;padding:1.5rem;max-width:360px;width:90%}
+.modal-icon{width:52px;height:52px;border-radius:50%;background:#fff3e0;display:flex;align-items:center;justify-content:center;margin:0 auto 1rem}
+.modal-title{font-size:16px;font-weight:700;text-align:center;color:#1a1a1a;margin-bottom:8px}
+.modal-week-label{font-size:13px;font-weight:600;color:#e65100;text-align:center;padding:7px 12px;background:#fff3e0;border-radius:8px;margin-bottom:12px}
+.modal-desc{font-size:13px;color:#666;margin-bottom:8px}
+.modal-list{font-size:12px;color:#888;padding-left:1.2rem;line-height:2;margin-bottom:1.25rem}
+.modal-btns{display:flex;gap:8px}
+.modal-btns button{flex:1;padding:10px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;font-family:'Sarabun',sans-serif;border:none}
+.modal-cancel{background:#f0f0f0;color:#555}
+.modal-cancel:hover{background:#e0e0e0}
+.log-filter{font-size:11px;padding:4px 10px;border:1px solid #ddd;border-radius:20px;background:#fff;color:#555;cursor:pointer;font-family:'Sarabun',sans-serif}
+.log-filter.active{background:#1a73e8;color:#fff;border-color:#1a73e8}
+.log-action-save{color:#2e7d32;font-weight:600}
+.log-action-zk{color:#1565c0;font-weight:600}
+.log-action-edit{color:#e65100}
+.log-action-load{color:#6a1b9a}
+.log-action-nav{color:#555}
+.modal-confirm{background:#e53935;color:#fff}
+.modal-confirm:hover{background:#c62828}
+.log-modal-body{max-height:320px;overflow-y:auto;margin-bottom:1rem}
+.log-footer{display:flex;justify-content:space-between;align-items:center;padding:10px 0 0;border-top:2px solid #f0f0f0}
+.pin-screen{display:none;position:fixed;inset:0;background:#1a1a2e;z-index:2000;align-items:center;justify-content:center;flex-direction:column}
+.pin-screen.show{display:flex}
+.pin-logo{font-size:40px;color:#1a73e8;margin-bottom:1rem}
+.pin-title{font-size:18px;font-weight:700;color:#fff;margin-bottom:6px}
+.pin-sub{font-size:13px;color:#aaa;margin-bottom:1.5rem;text-align:center}
+.pin-dots{display:flex;gap:12px;margin-bottom:1.5rem}
+.pin-dot{width:16px;height:16px;border-radius:50%;background:#333;transition:background .15s}
+.pin-dot.filled{background:#1a73e8}
+.pin-dot.error{background:#e53935}
+.pin-keypad{display:grid;grid-template-columns:repeat(3,72px);gap:10px}
+.pin-key{width:72px;height:72px;border-radius:50%;background:#2a2a3e;border:none;color:#fff;font-size:22px;font-weight:600;cursor:pointer;font-family:'Sarabun',sans-serif;transition:background .1s}
+.pin-key:hover{background:#3a3a5e}
+.pin-key:active{background:#1a73e8}
+.pin-key.del{font-size:18px;background:#2a2a3e}
+.pin-key.zero{grid-column:2}
+.pin-error{font-size:13px;color:#e57373;margin-top:8px;min-height:20px;text-align:center}
+.pin-change{font-size:12px;color:#666;margin-top:1rem;cursor:pointer;text-decoration:underline;background:none;border:none;font-family:'Sarabun',sans-serif}
+.lock-btn{background:transparent;border:1px solid #ddd;border-radius:8px;padding:5px 10px;cursor:pointer;color:#888;font-size:12px;font-family:'Sarabun',sans-serif;display:flex;align-items:center;gap:4px}
+.lock-btn:hover{background:#f5f5f5}
+</style>
+</head>
+<body>
+
+<div class="pin-screen" id="pin-screen">
+  <div class="pin-logo"><i class="ti ti-lock"></i></div>
+  <div class="pin-title" id="pin-title">ใส่รหัส 6 หลัก</div>
+  <div class="pin-sub" id="pin-sub">ตารางงานพนักงาน</div>
+  <div class="pin-dots" id="pin-dots">
+    <div class="pin-dot" id="d0"></div><div class="pin-dot" id="d1"></div>
+    <div class="pin-dot" id="d2"></div><div class="pin-dot" id="d3"></div>
+    <div class="pin-dot" id="d4"></div><div class="pin-dot" id="d5"></div>
+  </div>
+  <div class="pin-keypad">
+    <button class="pin-key" onclick="pinPress('1')">1</button>
+    <button class="pin-key" onclick="pinPress('2')">2</button>
+    <button class="pin-key" onclick="pinPress('3')">3</button>
+    <button class="pin-key" onclick="pinPress('4')">4</button>
+    <button class="pin-key" onclick="pinPress('5')">5</button>
+    <button class="pin-key" onclick="pinPress('6')">6</button>
+    <button class="pin-key" onclick="pinPress('7')">7</button>
+    <button class="pin-key" onclick="pinPress('8')">8</button>
+    <button class="pin-key" onclick="pinPress('9')">9</button>
+    <button class="pin-key zero" onclick="pinPress('0')">0</button>
+    <button class="pin-key del" onclick="pinDel()"><i class="ti ti-backspace"></i></button>
+  </div>
+  <div class="pin-error" id="pin-error"></div>
+  <button class="pin-change" id="pin-change-btn" onclick="pinForgot()" style="display:none">ลืมรหัส? รีเซ็ต</button>
+</div>
+
+<div class="container">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:.5rem">
+    <i class="ti ti-calendar-week" style="font-size:24px;color:#1a73e8"></i>
+    <h1>ตารางงานพนักงาน</h1>
+    <span style="font-size:12px;color:#aaa;margin-left:auto">จ่ายทุกเย็นวันเสาร์</span>
+  </div>
+  <div id="sync-bar" style="display:none;font-size:12px;font-weight:600;padding:6px 12px;border-radius:8px;margin-bottom:.75rem;transition:all .3s"></div>
+
+  <div class="tab-row">
+    <button class="tab active" onclick="showTab('schedule')"><i class="ti ti-calendar-week" style="font-size:14px;margin-right:4px;vertical-align:-2px"></i>ตารางงานสัปดาห์นี้</button>
+    <button class="tab" onclick="showTabProtected('summary')"><i class="ti ti-cash" style="font-size:14px;margin-right:4px;vertical-align:-2px"></i>สรุปจ่ายเงินเสาร์ <i class="ti ti-lock" style="font-size:11px;opacity:.6"></i></button>
+    <button class="tab" onclick="showTabProtected('weekly')"><i class="ti ti-calendar-stats" style="font-size:14px;margin-right:4px;vertical-align:-2px"></i>สรุปรายสัปดาห์ <i class="ti ti-lock" style="font-size:11px;opacity:.6"></i></button>
+    <button class="tab" onclick="showTabProtected('monthly')"><i class="ti ti-chart-bar" style="font-size:14px;margin-right:4px;vertical-align:-2px"></i>สรุปรายเดือน <i class="ti ti-lock" style="font-size:11px;opacity:.6"></i></button>
+    <button class="tab" onclick="showTabProtected('settings')"><i class="ti ti-users" style="font-size:14px;margin-right:4px;vertical-align:-2px"></i>จัดการพนักงาน <i class="ti ti-lock" style="font-size:11px;opacity:.6"></i></button>
+    <button class="tab" onclick="showTabProtected('permit')"><i class="ti ti-id-badge" style="font-size:14px;margin-right:4px;vertical-align:-2px"></i>ใบอนุญาต <i class="ti ti-lock" style="font-size:11px;opacity:.6"></i></button>
+    <button class="tab" onclick="showTabProtected('quota')"><i class="ti ti-calendar-off" style="font-size:14px;margin-right:4px;vertical-align:-2px"></i>โควต้าลา <i class="ti ti-lock" style="font-size:11px;opacity:.6"></i></button>
+    <button class="tab" onclick="showTabProtected('auditlog')" style="margin-left:auto"><i class="ti ti-history" style="font-size:14px;margin-right:4px;vertical-align:-2px"></i>Log <i class="ti ti-lock" style="font-size:11px;opacity:.6"></i></button>
+  </div>
+
+  <div id="tab-quota" style="display:none">
+    <div class="card" style="padding:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="margin:0;font-size:15px"><i class="ti ti-calendar-off" style="margin-right:6px;color:#555"></i>โควต้าลา/ขาด ประจำปี</h3>
+        <div id="quota-year-label" style="font-size:13px;color:#888;font-weight:600"></div>
+      </div>
+      <div style="font-size:11px;color:#aaa;margin-bottom:12px">โควต้า 120 ชม./ปี (15 วัน) สำหรับพนักงานเงินเดือน · ขาด/ลา/มาไม่ครบชั่วโมง นับรวมทั้งหมด · เกินโควต้าหักเงินตามจริง</div>
+      <div id="quota-cards"></div>
+    </div>
+  </div>
+
+  <div id="tab-auditlog" style="display:none">
+    <div class="card" style="padding:16px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+        <h3 style="margin:0;font-size:15px"><i class="ti ti-history" style="margin-right:6px;color:#555"></i>Audit Log — ประวัติการใช้งาน</h3>
+        <div style="display:flex;gap:8px">
+          <button onclick="exportLog()" style="font-size:12px;padding:5px 10px;background:#e8f0fe;color:#1a73e8;border:1px solid #c5d8fb;border-radius:6px;cursor:pointer"><i class="ti ti-download" style="font-size:12px;vertical-align:-1px"></i> Export CSV</button>
+          <button onclick="clearLog()" style="font-size:12px;padding:5px 10px;background:#fce8e6;color:#c62828;border:1px solid #f5c6c6;border-radius:6px;cursor:pointer"><i class="ti ti-trash" style="font-size:12px;vertical-align:-1px"></i> ล้าง Log</button>
+        </div>
+      </div>
+      <div style="font-size:11px;color:#aaa;margin-bottom:10px" id="log-device-info"></div>
+      <div style="margin-bottom:10px;display:flex;gap:8px;flex-wrap:wrap" id="log-filter-row">
+        <button class="log-filter active" onclick="filterLog('all',this)">ทั้งหมด</button>
+        <button class="log-filter" onclick="filterLog('save',this)">💾 Save</button>
+        <button class="log-filter" onclick="filterLog('zk',this)">📥 ZKTime</button>
+        <button class="log-filter" onclick="filterLog('edit',this)">✏️ แก้ไข</button>
+        <button class="log-filter" onclick="filterLog('load',this)">🔄 โหลดข้อมูล</button>
+      </div>
+      <div id="log-table-wrap" style="max-height:500px;overflow-y:auto;border:1px solid #eee;border-radius:8px">
+        <table style="width:100%;border-collapse:collapse;font-size:12px" id="log-table">
+          <thead><tr style="background:#f5f5f5;position:sticky;top:0">
+            <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #eee;white-space:nowrap">เวลา</th>
+            <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #eee">Action</th>
+            <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #eee">รายละเอียด</th>
+            <th style="padding:8px 10px;text-align:left;border-bottom:1px solid #eee;white-space:nowrap">อุปกรณ์</th>
+          </tr></thead>
+          <tbody id="log-tbody"></tbody>
+        </table>
+      </div>
+      <div id="log-count" style="font-size:11px;color:#aaa;margin-top:8px;text-align:right"></div>
+    </div>
+  </div>
+
+  <div id="tab-schedule">
+    <div class="week-nav">
+      <button class="week-btn" onclick="changeWeek(-1)"><i class="ti ti-chevron-left" style="font-size:12px;vertical-align:-1px"></i> ย้อนกลับ</button>
+      <div class="week-label" id="week-label"></div>
+      <button class="week-btn" onclick="changeWeek(1)">ถัดไป <i class="ti ti-chevron-right" style="font-size:12px;vertical-align:-1px"></i></button>
+      <button class="week-btn" onclick="importZKTime()" title="นำเข้าข้อมูลจาก ZKTime.net Export (.xls/.xlsx)" style="background:#e8f5e9;color:#2e7d32;border-color:#a5d6a7;margin-left:8px"><i class="ti ti-file-import" style="font-size:13px;vertical-align:-2px"></i> ZKTime</button>
+    </div>
+    <div id="pan-notice"></div>
+    <div class="legend">
+      <span style="font-size:11px;color:#555;font-weight:600">แถวชั่วโมง:</span>
+      <span class="legend-item"><span class="dot" style="background:#81c784"></span>เต็มวัน</span>
+      <span class="legend-item"><span class="dot" style="background:#FF8F00"></span>ครึ่งวัน</span>
+      <span class="legend-item"><span class="dot" style="background:#ef9a9a"></span>เข้าช้า/ไม่ครบ</span>
+      <span class="legend-item"><span class="dot" style="background:#ffb74d"></span>OT</span>
+    </div>
+    <div class="stat-grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="stat"><div class="stat-label">พนักงานทั้งหมด</div><div class="stat-value" id="s-total-emp">0</div></div>
+      <div class="stat"><div class="stat-label">มาทำงาน (วันนี้)</div><div class="stat-value" id="s-present">0</div></div>
+      <div class="stat"><div class="stat-label">OT รวมสัปดาห์</div><div class="stat-value" id="s-ot-total">0 ชม.</div></div>
+    </div>
+    <div class="card">
+      <div class="tbl-wrap"><table id="schedule-table"></table></div>
+      <div class="btn-row">
+        <button class="btn-primary" onclick="saveWeek()"><i class="ti ti-device-floppy" style="font-size:14px;vertical-align:-2px;margin-right:4px"></i>บันทึกสัปดาห์นี้</button>
+        <button class="btn-sec" onclick="showClearConfirm()"><i class="ti ti-refresh" style="font-size:14px;vertical-align:-2px;margin-right:4px"></i>ล้างข้อมูล</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-summary" style="display:none">
+    <div class="week-nav">
+      <button class="week-btn" onclick="changeSumWeek(-1)"><i class="ti ti-chevron-left" style="font-size:12px;vertical-align:-1px"></i> ย้อนกลับ</button>
+      <div class="week-label" id="sum-week-label"></div>
+      <button class="week-btn" onclick="changeSumWeek(1)">ถัดไป <i class="ti ti-chevron-right" style="font-size:12px;vertical-align:-1px"></i></button>
+    </div>
+    <div class="stat-grid">
+      <div class="stat"><div class="stat-label">ค่าจ้างรวม (หลังหัก)</div><div class="stat-value" id="ss-total">฿0</div></div>
+      <div class="stat"><div class="stat-label">ค่า OT รวม</div><div class="stat-value" id="ss-ot">฿0</div></div>
+      <div class="stat"><div class="stat-label">หักประกันสังคม</div><div class="stat-value" id="ss-sso" style="color:#e65100">฿0</div></div>
+      <div class="stat"><div class="stat-label">หมายเหตุ บวก/ลบ</div><div class="stat-value" id="ss-misc">฿0</div></div>
+    </div>
+    <div class="card"><div id="summary-list"></div>
+      <div style="display:flex;gap:8px;margin-top:12px;justify-content:flex-end">
+        <button onclick="copySummaryText()" style="padding:8px 14px;background:#f5f5f5;color:#555;border:1px solid #ddd;border-radius:8px;font-size:13px;cursor:pointer;font-family:'Sarabun',sans-serif">
+          <i class="ti ti-copy" style="font-size:14px;vertical-align:-2px;margin-right:3px"></i>คัดลอก
+        </button>
+        <button onclick="openSelectedPopup()" style="padding:8px 16px;background:#1a73e8;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Sarabun',sans-serif">
+          <i class="ti ti-calculator" style="font-size:14px;vertical-align:-2px;margin-right:3px"></i>รวมที่เลือก
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-weekly" style="display:none">
+    <div class="week-nav">
+      <button class="week-btn" onclick="changeWeek(-1)"><i class="ti ti-chevron-left" style="font-size:12px;vertical-align:-1px"></i> ย้อนกลับ</button>
+      <div class="week-label" id="weekly-label"></div>
+      <button class="week-btn" onclick="changeWeek(1)">ถัดไป <i class="ti ti-chevron-right" style="font-size:12px;vertical-align:-1px"></i></button>
+    </div>
+    <div class="stat-grid" style="grid-template-columns:repeat(4,1fr)">
+      <div class="stat"><div class="stat-label">ค่าแรงรวม (ก่อนหักปกส.)</div><div class="stat-value" id="wk-gross" style="font-size:16px">฿0</div></div>
+      <div class="stat"><div class="stat-label">หักปกส. รวม</div><div class="stat-value" id="wk-sso" style="color:#e65100;font-size:16px">฿0</div></div>
+      <div class="stat"><div class="stat-label">OT รวม</div><div class="stat-value" id="wk-ot" style="font-size:16px">฿0</div></div>
+      <div class="stat"><div class="stat-label">รับจริงรวมทั้งหมด</div><div class="stat-value" id="wk-net" style="color:#2e7d32;font-size:16px">฿0</div></div>
+    </div>
+    <div class="card" id="weekly-table-wrap"></div>
+  </div>
+
+  <div id="tab-monthly" style="display:none">
+    <div class="week-nav">
+      <button class="week-btn" onclick="changeMonth(-1)"><i class="ti ti-chevron-left" style="font-size:12px;vertical-align:-1px"></i> ย้อนกลับ</button>
+      <div class="week-label" id="monthly-label"></div>
+      <button class="week-btn" onclick="changeMonth(1)">ถัดไป <i class="ti ti-chevron-right" style="font-size:12px;vertical-align:-1px"></i></button>
+    </div>
+    <div class="stat-grid" style="grid-template-columns:repeat(4,1fr)">
+      <div class="stat"><div class="stat-label">ค่าแรงรวม (ก่อนหักปกส.)</div><div class="stat-value" id="mn-gross" style="font-size:16px">฿0</div></div>
+      <div class="stat"><div class="stat-label">หักปกส. รวม</div><div class="stat-value" id="mn-sso" style="color:#e65100;font-size:16px">฿0</div></div>
+      <div class="stat"><div class="stat-label">OT รวม</div><div class="stat-value" id="mn-ot" style="font-size:16px">฿0</div></div>
+      <div class="stat"><div class="stat-label">รับจริงรวมทั้งหมด</div><div class="stat-value" id="mn-net" style="color:#2e7d32;font-size:16px">฿0</div></div>
+    </div>
+    <div class="card" id="monthly-table-wrap"></div>
+  </div>
+
+  <div id="tab-permit" style="display:none">
+    <div class="card">
+      <h3><i class="ti ti-id-badge" style="font-size:16px;vertical-align:-2px;margin-right:6px;color:#7b1fa2"></i>จัดการใบอนุญาตทำงาน</h3>
+      <p style="font-size:12px;color:#888;margin-top:4px;margin-bottom:1rem">บริษัทออกค่าใบอนุญาตให้ก่อน ตัดเงินรายสัปดาห์จากค่าจ้าง</p>
+      <div id="permit-list"></div>
+    </div>
+    <div class="card">
+      <h3>ประวัติการตัดเงิน</h3>
+      <div id="permit-history"></div>
+    </div>
+  </div>
+
+    <div id="tab-settings" style="display:none">
+    <div class="card">
+      <h3>เพิ่มพนักงาน</h3>
+      <div class="grid2" style="margin-bottom:10px">
+        <div class="field"><label>ชื่อ</label><input type="text" id="new-name" placeholder="ชื่อพนักงาน"></div>
+        <div class="field"><label>ประเภท</label><select id="new-type" onchange="toggleNewSalaryOpts()"><option value="daily">รายวัน</option><option value="salary">เงินเดือน</option></select></div>
+      </div>
+      <div class="grid2" style="margin-bottom:10px">
+        <div class="field"><label>ค่าจ้าง/วัน หรือ เงินเดือน/เดือน (บาท)</label><input type="number" id="new-rate" placeholder="เช่น 380" style="text-align:left;padding:6px 8px;width:100%"></div>
+        <div class="field"><label>ค่า OT/ชม. (บาท)</label><input type="number" id="new-ot" placeholder="เช่น 80" style="text-align:left;padding:6px 8px;width:100%"></div>
+      </div>
+      <div class="grid2" style="margin-bottom:10px">
+        <div class="field"><label>ชั่วโมงทำงานปกติ/วัน</label><input type="number" id="new-hrs" value="8" style="text-align:left;padding:6px 8px;width:100%"></div>
+        <div class="field"><label>วันหยุดประจำสัปดาห์ (เลือกได้หลายวัน)</label>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px" id="new-offday-wrap">
+            <label style="display:flex;align-items:center;gap:3px;font-size:12px;cursor:pointer"><input type="checkbox" value="1" class="new-offday-chk" style="accent-color:#1a73e8">จ.</label>
+            <label style="display:flex;align-items:center;gap:3px;font-size:12px;cursor:pointer"><input type="checkbox" value="2" class="new-offday-chk" style="accent-color:#1a73e8">อ.</label>
+            <label style="display:flex;align-items:center;gap:3px;font-size:12px;cursor:pointer"><input type="checkbox" value="3" class="new-offday-chk" style="accent-color:#1a73e8">พ.</label>
+            <label style="display:flex;align-items:center;gap:3px;font-size:12px;cursor:pointer"><input type="checkbox" value="4" class="new-offday-chk" style="accent-color:#1a73e8">พฤ.</label>
+            <label style="display:flex;align-items:center;gap:3px;font-size:12px;cursor:pointer"><input type="checkbox" value="5" class="new-offday-chk" style="accent-color:#1a73e8">ศ.</label>
+            <label style="display:flex;align-items:center;gap:3px;font-size:12px;cursor:pointer"><input type="checkbox" value="6" class="new-offday-chk" style="accent-color:#1a73e8">ส.</label>
+            <label style="display:flex;align-items:center;gap:3px;font-size:12px;cursor:pointer"><input type="checkbox" value="0" class="new-offday-chk" checked style="accent-color:#1a73e8">อา.</label>
+          </div>
+        </div>
+      </div>
+      <div id="new-salary-opts" style="display:none;margin-bottom:10px;background:#f7f0ff;border-radius:8px;padding:12px;border:1px solid #d1c4e9">
+        <div style="font-size:12px;font-weight:600;color:#311b92;margin-bottom:8px">ตัวเลือกเงินเดือน</div>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;margin-bottom:6px"><input type="checkbox" id="new-biweek" style="width:15px;height:15px;accent-color:#311b92"> จ่ายทุก 2 สัปดาห์ (เสาร์ที่ 2 และ 4 ของเดือน)</label>
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;margin-bottom:6px"><input type="checkbox" id="new-eombonus" style="width:15px;height:15px;accent-color:#2e7d32"> บวกเพิ่มสิ้นเดือน (ครั้งที่ 2)</label>
+        <div class="field" style="max-width:180px;margin-top:4px"><label>จำนวนเงินบวกเพิ่ม (บาท)</label><input type="number" id="new-eomamt" placeholder="เช่น 500" style="text-align:left;padding:5px 8px;width:100%"></div>
+      </div>
+      <div style="margin-bottom:14px">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px"><input type="checkbox" id="new-sso" style="width:16px;height:16px;accent-color:#e65100"> หักประกันสังคม 5% (จากค่าจ้างพื้นฐาน ไม่รวม OT)</label>
+      </div>
+      <button class="btn-info" onclick="addEmployee()"><i class="ti ti-plus" style="font-size:14px;vertical-align:-2px;margin-right:4px"></i>เพิ่มพนักงาน</button>
+    </div>
+    <div class="card"><h3>รายชื่อพนักงาน</h3><div id="emp-list"></div></div>
+  </div>
+</div>
+
+<script>
+const DAYS=['จ.','อ.','พ.','พฤ.','ศ.','ส.','อา.'];
+const DAYS_FULL=['จันทร์','อังคาร','พุธ','พฤหัส','ศุกร์','เสาร์','อาทิตย์'];
+
+// ===== ตั้งค่า URL ของ Google Apps Script ตรงนี้ =====
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzVg1knuvCTwpriqmQogYTBhVpoNVy9f321Kf-5R4EwUoalF8pUO5rR5Q6WaHpLOq45/exec';
+// ====================================================
+
+const DEFAULT_EMPLOYEES = [
+  {id:'e1',name:'แพน',type:'salary',rate:12800,ot:80,hrs:8,offday:[0],sso:true,biweek:true,eomBonus:500},
+  {id:'e2',name:'น้านาท',type:'daily',rate:400,ot:80,hrs:8,offday:[0],sso:true,biweek:false,eomBonus:0},
+  {id:'e3',name:'ป้าจิบ',type:'daily',rate:360,ot:80,hrs:7,offday:[0],sso:false,biweek:false,eomBonus:0},
+  {id:'e4',name:'พี่บอย',type:'daily',rate:360,ot:80,hrs:8,offday:[0],sso:false,biweek:false,eomBonus:0},
+  {id:'e5',name:'น้ำ',type:'daily',rate:400,ot:80,hrs:8,offday:[0],sso:false,biweek:false,eomBonus:0,otFlat:400,otFlatHrs:4},
+  {id:'e6',name:'ลุย',type:'daily',rate:380,ot:80,hrs:8,offday:[0],sso:false,biweek:false,eomBonus:0},
+  {id:'e7',name:'กาก่า',type:'daily',rate:360,ot:80,hrs:8,offday:[0],sso:false,biweek:false,eomBonus:0},
+  {id:'e8',name:'นุ๊ก',type:'daily',rate:380,ot:80,hrs:8,offday:[0],sso:false,biweek:false,eomBonus:0},
+  {id:'e9',name:'สมคิด',type:'daily',rate:380,ot:80,hrs:8,offday:[6],sso:false,biweek:false,eomBonus:0},
+  {id:'e10',name:'ปาย',type:'daily',rate:380,ot:80,hrs:8,offday:[0],sso:false,biweek:false,eomBonus:0},
+  {id:'e11',name:'วิน',type:'daily',rate:360,ot:80,hrs:8,offday:[0],sso:false,biweek:false,eomBonus:0},
+  {id:'e12',name:'วาวาย',type:'daily',rate:360,ot:80,hrs:8,offday:[0],sso:false,biweek:false,eomBonus:0},
+];
+
+let employees = DEFAULT_EMPLOYEES;
+let weekData = {};
+
+// ========== AUDIT LOG ENGINE ==========
+const LOG_KEY = 'stafftable_auditlog';
+const LOG_MAX = 500;
+let _logFilter = 'all';
+
+function getUA(){const ua=navigator.userAgent;if(ua.includes('iPhone')||ua.includes('iPad'))return '📱 iOS';if(ua.includes('Android'))return '📱 Android';if(ua.includes('Windows'))return '💻 Windows';if(ua.includes('Mac'))return '💻 Mac';return '🖥 Other';}
+
+function logAction(action,detail){
+  try{
+    const logs=getLogs();
+    const now=new Date();
+    const ts=`${now.getDate()}/${now.getMonth()+1}/${(now.getFullYear()+543).toString().slice(-2)} ${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}`;
+    logs.unshift({ts,action,detail,ua:getUA(),raw:now.getTime()});
+    if(logs.length>LOG_MAX)logs.length=LOG_MAX;
+    localStorage.setItem(LOG_KEY,JSON.stringify(logs));
+  }catch(e){}
+}
+
+function getLogs(){
+  try{const s=localStorage.getItem(LOG_KEY);return s?JSON.parse(s):[];}catch(e){return[];}
+}
+
+function getActionCategory(action){
+  if(action.startsWith('save'))return 'save';
+  if(action.startsWith('zk'))return 'zk';
+  if(action.startsWith('edit')||action.startsWith('toggle'))return 'edit';
+  if(action.startsWith('load'))return 'load';
+  return 'nav';
+}
+
+function getActionLabel(action){
+  const map={'load_app':'🔄 เปิดแอป','load_sheets_ok':'🔄 โหลดข้อมูล GSheet OK','load_sheets_err':'⚠️ โหลด GSheet ผิดพลาด','save_ok':'💾 Save สำเร็จ','save_err':'⚠️ Save ผิดพลาด','zk_preview':'📥 ZKTime Preview','zk_confirm':'✅ ZKTime นำเข้าแล้ว','zk_cancel':'❌ ZKTime ยกเลิก','edit_workhrs':'✏️ แก้ชั่วโมง','edit_ot':'✏️ แก้ OT','edit_bonus':'✏️ แก้ +บาท','edit_deduct':'✏️ แก้ -บาท','edit_late_deduct':'✏️ แก้ หักสาย','toggle_day':'✏️ ติ๊กวัน','week_change':'📅 เปลี่ยนสัปดาห์'};
+  return map[action]||action;
+}
+
+function renderLog(){
+  const logs=getLogs();
+  const filtered=_logFilter==='all'?logs:logs.filter(l=>getActionCategory(l.action)===_logFilter);
+  const tbody=document.getElementById('log-tbody');if(!tbody)return;
+  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="4" style="text-align:center;padding:20px;color:#aaa;font-size:13px">ยังไม่มีประวัติการใช้งาน</td></tr>`;document.getElementById('log-count').textContent='';return;}
+  tbody.innerHTML=filtered.map(l=>{
+    const cat=getActionCategory(l.action);
+    return`<tr style="border-bottom:1px solid #f5f5f5">
+      <td style="padding:7px 10px;white-space:nowrap;color:#555">${l.ts}</td>
+      <td style="padding:7px 10px;white-space:nowrap" class="log-action-${cat}">${getActionLabel(l.action)}</td>
+      <td style="padding:7px 10px;color:#333;max-width:320px">${l.detail||''}</td>
+      <td style="padding:7px 10px;color:#aaa;white-space:nowrap;font-size:11px">${l.ua||''}</td>
+    </tr>`;
+  }).join('');
+  document.getElementById('log-count').textContent=`แสดง ${filtered.length} รายการ จากทั้งหมด ${logs.length} รายการ`;
+  document.getElementById('log-device-info').textContent=`อุปกรณ์ปัจจุบัน: ${getUA()} · ${navigator.userAgent.substring(0,80)}`;
+}
+
+function filterLog(f,btn){
+  _logFilter=f;
+  document.querySelectorAll('.log-filter').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  renderLog();
+}
+
+function exportLog(){
+  const logs=getLogs();
+  if(!logs.length){alert('ไม่มี Log');return;}
+  const rows=[['เวลา','Action','รายละเอียด','อุปกรณ์'],...logs.map(l=>[l.ts,getActionLabel(l.action),l.detail||'',l.ua||''])];
+  const csv=rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`stafftable_log_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+}
+
+function clearLog(){
+  if(!confirm('ล้าง Log ทั้งหมด?'))return;
+  localStorage.removeItem(LOG_KEY);
+  renderLog();
+}
+// ========== END AUDIT LOG ==========
+
+let currentWeekStart = getMondayOf(new Date());
+let sumWeekStart = getMondayOf(new Date());
+let editingEmpId = null;
+let isSyncing = false;
+
+// แสดง/ซ่อน sync status
+function setSyncStatus(msg, color) {
+  let bar = document.getElementById('sync-bar');
+  if (!bar) return;
+  bar.textContent = msg;
+  bar.style.background = color || '#e8f5e9';
+  bar.style.color = color === '#ffebee' ? '#c62828' : color === '#fff8e1' ? '#f57f17' : '#2e7d32';
+  bar.style.display = msg ? 'block' : 'none';
+}
+
+// โหลดข้อมูลจาก Google Sheets
+function showLoadingScreen(show){const el=document.getElementById('loading-screen');if(el)el.style.display=show?'flex':'none';}
+function loadFromSheets(){
+  if(!GAS_URL||GAS_URL==='YOUR_GOOGLE_APPS_SCRIPT_URL_HERE'){setSyncStatus('⚠️ ยังไม่ได้ตั้งค่า GAS_URL','#fff8e1');renderSchedule();return;}
+  showLoadingScreen(true);setSyncStatus('🔄 กำลังโหลดข้อมูล...','#e8f0fe');
+  window._gasLoad=function(data){
+    try{
+      if(data.error)throw new Error(data.error);
+      if(data.employees&&data.employees.length>0)employees=data.employees;
+      if(data.weekData){
+        const norm={};
+        let hasLegacyKeys=false;
+        Object.keys(data.weekData).forEach(k=>{
+          let nk=k;
+          if(k.length>12){
+            hasLegacyKeys=true;
+            const p=k.split(' ');try{const d=new Date(p[1]+' '+p[2]+' '+p[3]);nk=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}catch(e){}
+          }
+          const incoming=data.weekData[k];
+          const hasData=obj=>Object.values(obj||{}).some(ed=>ed&&((ed.workhrs&&ed.workhrs.some(h=>h>0))||(ed.present&&ed.present.some(p=>p))||ed.bonus||ed.deduct));
+          if(norm[nk]){
+            if(hasData(incoming)&&!hasData(norm[nk]))norm[nk]=incoming;
+          }else{
+            norm[nk]=incoming;
+          }
+        });
+        weekData=norm;
+        window._needsCleanup=hasLegacyKeys;
+      }
+      if(data.permitData)permitData=data.permitData;
+      employees=employees.map(e=>({...e,offday:Array.isArray(e.offday)?e.offday:(e.offday===-1?[]:[e.offday])}));
+      setSyncStatus('✅ โหลดข้อมูลสำเร็จ','#e8f5e9');setTimeout(()=>setSyncStatus('',''),2500);
+      logAction('load_sheets_ok',`โหลดข้อมูล ${Object.keys(weekData).length} สัปดาห์, ${employees.length} คน`);
+    }catch(err){setSyncStatus('❌ โหลดไม่ได้: '+err.message,'#ffebee');}
+    showLoadingScreen(false);renderSchedule();const el=document.getElementById('_gas_load_s');if(el)el.remove();
+  };
+  const s=document.createElement('script');s.id='_gas_load_s';
+  s.src=GAS_URL+'?action=load&callback=_gasLoad&t='+Date.now();
+  s.onerror=()=>{setSyncStatus('❌ โหลดไม่ได้','#ffebee');showLoadingScreen(false);renderSchedule();};
+  document.head.appendChild(s);
+}
+
+// บันทึกข้อมูลขึ้น Google Sheets
+function saveToSheets(){
+  if(!GAS_URL||GAS_URL==='YOUR_GOOGLE_APPS_SCRIPT_URL_HERE'){setSyncStatus('⚠️ ยังไม่ได้ตั้งค่า GAS_URL','#fff8e1');return;}
+  if(isSyncing)return;
+  isSyncing=true;setCloseBtn(false);setSyncStatus('☁️ กำลังบันทึก...','#e8f0fe');
+
+  const weekKeys=Object.keys(weekData);
+  const batches=[];
+  // helper: เช็คว่าสัปดาห์นี้มีข้อมูลจริงมั้ย
+  const weekHasData=wk=>Object.values(wk||{}).some(ed=>ed&&((ed.workhrs&&ed.workhrs.some(h=>h>0))||(ed.present&&ed.present.some(p=>p))||ed.bonus||ed.deduct||ed.lateDeduct||ed.earlyDeduct||ed.note));
+  for(let i=0;i<weekKeys.length;i+=1){
+    const k=weekKeys[i];
+    // ข้ามสัปดาห์ว่างเปล่า ไม่ต้อง save (กันเขียนทับข้อมูลจริงด้วยแถวว่าง)
+    if(!weekHasData(weekData[k]))continue;
+    const b={};b[k]=weekData[k];
+    batches.push({action:'saveWeekBatch',data:b});
+  }
+  const queue=[
+    {action:'saveEmp',data:employees},
+    ...batches,
+    {action:'savePermit',data:permitData||{}}
+  ];
+  let idx=0;let failCount=0;const retriedSet=new Set();
+
+  function runNext(){
+    if(idx>=queue.length){
+      isSyncing=false;setCloseBtn(true);
+      if(failCount===0){
+        setSyncStatus('✅ บันทึก Cloud สำเร็จ','#e8f5e9');
+        setTimeout(()=>setSyncStatus('',''),2500);
+        logAction('save_ok',`บันทึกสำเร็จ ${queue.length} รายการ, ${weekKeys.length} สัปดาห์`);
+      }else{
+        setSyncStatus(`❌ บันทึกไม่สำเร็จ ${failCount}/${queue.length} รายการ`,'#ffebee');
+        logAction('save_err',`fail ${failCount}/${queue.length}`);
+      }
+      return;
+    }
+    const item=queue[idx];
+    const callId='s'+Date.now()+'_'+idx;
+    const fn='_gc_'+callId;
+    let timer=null;
+    setSyncStatus(`☁️ กำลังบันทึก... (${idx+1}/${queue.length})`,'#e8f0fe');
+
+    function cleanup(){clearTimeout(timer);delete window[fn];const el=document.getElementById('_gs_'+callId);if(el)el.remove();}
+    function onSuccess(){cleanup();idx++;runNext();}
+    function onFail(reason){
+      cleanup();
+      if(!retriedSet.has(idx)){
+        // retry ครั้งเดียวต่อ batch
+        retriedSet.add(idx);
+        setSyncStatus(`🔄 ลองใหม่... (${idx+1}/${queue.length})`,'#fff8e1');
+        setTimeout(runNext,3000);
+      }else{
+        // เคย retry แล้ว — ข้ามไป
+        failCount++;
+        logAction('save_err',`batch ${idx+1} fail: ${reason}`);
+        idx++;
+        runNext();
+      }
+    }
+
+    window[fn]=function(d){if(d&&d.error)onFail('GAS: '+d.error);else onSuccess();};
+    const s=document.createElement('script');s.id='_gs_'+callId;
+    const dataStr=encodeURIComponent(JSON.stringify(item.data));
+    const fullUrl=`${GAS_URL}?action=${item.action}&callback=${fn}&data=${dataStr}&t=${Date.now()}`;
+    // เช็ค URL ยาวเกิน limit (~8000 คือเริ่มเสี่ยง)
+    if(fullUrl.length>7500){
+      logAction('save_err',`URL ยาวเกิน: ${item.action} = ${fullUrl.length} ตัวอักษร (${Object.keys(item.data).join(',')})`);
+      onFail(`URL ยาว ${fullUrl.length} ตัวอักษร`);
+      return;
+    }
+    s.src=fullUrl;
+    s.onerror=()=>onFail('network/script error');
+    timer=setTimeout(()=>onFail('timeout 30s'),30000);
+    document.head.appendChild(s);
+  }
+
+  runNext();
+}
+
+function setCloseBtn(enabled) {
+  const btn = document.getElementById('modal-close-btn');
+  if (!btn) return;
+  btn.disabled = !enabled;
+  btn.style.opacity = enabled ? '1' : '0.4';
+  btn.style.cursor = enabled ? 'pointer' : 'not-allowed';
+  btn.innerHTML = enabled ? 'ปิด' : '<i class="ti ti-loader" style="font-size:13px;vertical-align:-2px;margin-right:4px"></i>กำลังบันทึก...';
+}
+
+function save() { saveToSheets(); }
+function getMondayOf(d){const dt=new Date(d);const day=dt.getDay();const diff=day===0?-6:1-day;dt.setDate(dt.getDate()+diff);dt.setHours(0,0,0,0);return dt;}
+function weekKey(m){const y=m.getFullYear();const mo=String(m.getMonth()+1).padStart(2,'0');const d=String(m.getDate()).padStart(2,'0');return y+'-'+mo+'-'+d;}
+function weekDateRange(m){const sun=new Date(m);sun.setDate(sun.getDate()+6);const fmt=d=>`${d.getDate()}/${d.getMonth()+1}/${(d.getFullYear()+543).toString().slice(-2)}`;return`${fmt(m)} – ${fmt(sun)}`;}
+function getSaturday(m){const s=new Date(m);s.setDate(s.getDate()+5);return s;}
+function changeWeek(dir){currentWeekStart=new Date(currentWeekStart);currentWeekStart.setDate(currentWeekStart.getDate()+dir*7);logAction('week_change',`สัปดาห์ ${weekDateRange(currentWeekStart)}`);const wkTab=document.getElementById('tab-weekly');if(wkTab&&wkTab.style.display!=='none'){renderWeekly();}else{renderSchedule();}}
+function changeSumWeek(dir){sumWeekStart=new Date(sumWeekStart);sumWeekStart.setDate(sumWeekStart.getDate()+dir*7);renderSummary();}
+function getWeekData(){const key=weekKey(currentWeekStart);if(!weekData[key])weekData[key]={};return weekData[key];}
+function initEmpData(){return{present:[false,false,false,false,false,false,false],workhrs:[0,0,0,0,0,0,0],ot:[0,0,0,0,0,0,0],bonus:0,deduct:0,lateDeduct:0,earlyDeduct:0,bonusNote:'',deductNote:'',note:''};}
+
+// ========== ZKTime Import ==========
+// ไม่พักเที่ยง: empId → dayIdx[] (0=จ, 6=อา)
+const NO_LUNCH_CONFIG={};
+// เวลาเข้า-ออกงานมาตรฐานต่อคน (นาทีจากเที่ยงคืน) — default 08:00-17:00
+const WORK_TIME_CONFIG={'e3':{start:9*60,end:17*60}}; // ป้าจิบ เข้า 9:00 ออก 17:00
+function getWorkTime(empId){return WORK_TIME_CONFIG[empId]||{start:8*60,end:17*60};}
+// แปลง "08:53" เป็นนาทีจากเที่ยงคืน
+function clockToMins(val){if(!val)return null;const s=val.toString().trim();const p=s.split(':');if(p.length<2)return null;const h=parseInt(p[0]),m=parseInt(p[1]);if(isNaN(h)||isNaN(m))return null;return h*60+m;}
+const ZK_NAME_MAP={'Pan':'e1','Naat':'e2','Jb':'e3','Jib':'e3','Boy':'e4','Nam':'e5','Luy':'e6','Gaga':'e7','Nook':'e8','Somkid':'e9','Pay':'e10','Win':'e11','Wa':'e12'};
+function zkTimeToHrs(val){if(!val||val==='0:00'||val==='')return 0;const s=val.toString().trim();const p=s.split(':');if(p.length<2)return 0;const h=parseInt(p[0])||0,m=parseInt(p[1])||0;return h+m/60;}
+function zkTimeToMins(val){if(!val||val==='0:00'||val==='')return 0;const s=val.toString().trim();const p=s.split(':');if(p.length<2)return 0;return(parseInt(p[0])||0)*60+(parseInt(p[1])||0);}
+function calcLateDeductMins(lateMins){if(lateMins<=5)return 0;if(lateMins<=10)return 10;return Math.ceil(lateMins/30)*30;}
+function parseZKDate(val){if(!val)return null;const s=val.toString().trim();const p=s.split('.');if(p.length<3)return null;const[d,mo,y]=p.map(Number);if(!y||!mo||!d)return null;return new Date(y,mo-1,d);}
+let zkPending=null;
+
+function importZKTime(){
+  if(!window.XLSX){alert('กำลังโหลด SheetJS กรุณาลองใหม่อีกครั้ง');return;}
+  const inp=document.createElement('input');inp.type='file';inp.accept='.xls,.xlsx';
+  inp.onchange=e=>{
+    const file=e.target.files[0];if(!file)return;
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      try{
+        const wb=XLSX.read(ev.target.result,{type:'array'});
+        const ws=wb.Sheets[wb.SheetNames[0]];
+        const rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+        // --- parse & build pending items ---
+        const pending=[];const unknownNames=new Set();
+        let minDate=null,maxDate=null;
+        rows.forEach(row=>{
+          const name=(row['Name']||'').toString().trim();
+          const empId=ZK_NAME_MAP[name];
+          if(!empId){if(name)unknownNames.add(name);return;}
+          const date=parseZKDate(row['Date']);if(!date||isNaN(date))return;
+          // เดิมเช็ค Timetable แต่ ZKTime บางทีไม่ใส่ให้ → เปลี่ยนมาเช็คว่ามีการสแกนเข้างานจริง
+          const checkIn=(row['Check-In']||'').toString().trim();
+          const rawActual=zkTimeToHrs(row['Actual Work']);
+          const hasWork=rawActual>0||checkIn!=='';
+          if(!hasWork)return; // ไม่มีการเข้างาน (วันหยุด/ขาด) → ข้าม
+          if(!minDate||date<minDate)minDate=new Date(date);
+          if(!maxDate||date>maxDate)maxDate=new Date(date);
+          const dayIdx=(date.getDay()+6)%7;
+          const monday=getMondayOf(date);const key=weekKey(monday);
+          const emp=employees.find(e=>e.id===empId);const stdHrs=emp?(emp.hrs||8):8;
+          const timetable=(row['Timetable']||'').toString().trim();
+          const noLunchDays=NO_LUNCH_CONFIG[empId]||[];
+          const isNoLunchDay=noLunchDays.includes(dayIdx);
+          let correctedHrs=rawActual;
+          if(timetable){
+            // มี Timetable → ZKTime หักพักแล้ว
+            // แต่ถ้าเป็นวันไม่พักเที่ยง ZKTime หักเกินไป 1 ชม. → บวกคืน
+            if(isNoLunchDay)correctedHrs=rawActual+1;
+          }else{
+            // ไม่มี Timetable → ZKTime ไม่หักพัก = เวลาดิบ
+            // ต้องหักพักเที่ยง 1 ชม. เอง (ยกเว้นวันไม่พักเที่ยง)
+            if(!isNoLunchDay&&rawActual>0)correctedHrs=rawActual-1;
+          }
+          if(correctedHrs<0)correctedHrs=0;
+          // คำนวณสาย/ออกก่อน/OT เองจาก Check-In/Check-Out (ZKTime ไม่คำนวณให้)
+          const wt=getWorkTime(empId);
+          const clockIn=clockToMins(row['Check-In']||row['Clock-In']);
+          const clockOut=clockToMins(row['Check-Out']||row['Clock-Out']);
+          // OT = ทุกนาทีหลังเวลาเลิกงาน (17:00) นับตามจริง — ทุกคนเลิก 17:00 เหมือนกัน
+          let ot3Hrs=zkTimeToHrs(row['OT3']);
+          if(ot3Hrs===0&&clockOut!==null&&clockOut>wt.end){
+            ot3Hrs=Math.round((clockOut-wt.end)/60*100)/100;
+          }
+          // สาย = เข้างานหลังเวลาเริ่ม
+          let lateMins=0;
+          if(clockIn!==null&&clockIn>wt.start)lateMins=clockIn-wt.start;
+          const lateDeductMins=calcLateDeductMins(lateMins);
+          const lateDeductBaht=emp?(lateDeductMins/60*(emp.rate/(emp.hrs||8))):0;
+          // ออกก่อน = ออกงานก่อนเวลาเลิก (หักตามจริงเฉพาะรายวัน)
+          let earlyOutMins=0;
+          if(clockOut!==null&&clockOut<wt.end)earlyOutMins=wt.end-clockOut;
+          let earlyOutBaht=0;
+          if(emp&&emp.type!=='salary'&&earlyOutMins>0){
+            earlyOutBaht=Math.round(earlyOutMins/60*(emp.rate/(emp.hrs||8)));
+          }
+          // check if blocked by existing data
+          const ed=weekData[key]&&weekData[key][empId];
+          const blocked=ed&&(ed.workhrs[dayIdx]||0)>0;
+          pending.push({empId,name,key,dayIdx,actualHrs:correctedHrs,stdHrs,ot3Hrs,lateMins,lateDeductMins,lateDeductBaht,earlyOutMins,earlyOutBaht,blocked,date:new Date(date)});
+        });
+        zkPending={pending,unknownNames};
+        logAction('zk_preview',`ไฟล์: ${file.name} | ${pending.filter(p=>!p.blocked&&p.actualHrs>0).length} วันจะนำเข้า | ${pending.filter(p=>p.blocked).length} วันข้าม`);
+        showZKPreview(minDate,maxDate,pending,unknownNames);
+      }catch(err){alert('❌ อ่านไฟล์ไม่ได้: '+err.message);}
+    };
+    reader.readAsArrayBuffer(file);
+  };
+  inp.click();
+}
+
+function showZKPreview(minDate,maxDate,pending,unknownNames){
+  const fmt=d=>d?`${d.getDate()}/${d.getMonth()+1}/${(d.getFullYear()+543).toString().slice(-2)}`:'?';
+  document.getElementById('zk-preview-range').textContent=`ช่วงวันที่: ${fmt(minDate)} – ${fmt(maxDate)}`;
+  const toImport=pending.filter(p=>!p.blocked&&p.actualHrs>0);
+  const blocked=pending.filter(p=>p.blocked);
+  const absent=pending.filter(p=>!p.blocked&&p.actualHrs===0);
+  // stats
+  const stats=document.getElementById('zk-preview-stats');
+  stats.innerHTML=`
+    <div style="flex:1;background:#e8f5e9;border-radius:8px;padding:8px;text-align:center"><div style="font-size:18px;font-weight:700;color:#2e7d32">${toImport.length}</div><div style="font-size:11px;color:#555">วันที่จะนำเข้า</div></div>
+    <div style="flex:1;background:#fff8e1;border-radius:8px;padding:8px;text-align:center"><div style="font-size:18px;font-weight:700;color:#f57c00">${blocked.length}</div><div style="font-size:11px;color:#555">🔒 ข้าม (มีข้อมูลอยู่)</div></div>
+    <div style="flex:1;background:#f5f5f5;border-radius:8px;padding:8px;text-align:center"><div style="font-size:18px;font-weight:700;color:#aaa">${absent.length}</div><div style="font-size:11px;color:#555">ขาด/ไม่มาทำงาน</div></div>
+  `;
+  // per-employee table
+  const byEmp={};pending.forEach(p=>{
+    if(!byEmp[p.empId])byEmp[p.empId]={name:p.name,in:0,blocked:0,absent:0,lateDeduct:0};
+    if(p.blocked)byEmp[p.empId].blocked++;
+    else if(p.actualHrs>0){byEmp[p.empId].in++;byEmp[p.empId].lateDeduct+=(p.lateDeductBaht||0)+(p.earlyOutBaht||0);}
+    else byEmp[p.empId].absent++;
+  });
+  let tbl=`<table style="width:100%;border-collapse:collapse;font-size:12px">
+    <thead><tr style="background:#f5f5f5">
+      <th style="padding:7px 10px;text-align:left;border-bottom:1px solid #eee">พนักงาน</th>
+      <th style="padding:7px 6px;text-align:center;border-bottom:1px solid #eee;color:#2e7d32">✅ วัน</th>
+      <th style="padding:7px 6px;text-align:center;border-bottom:1px solid #eee;color:#f57c00">🔒 ข้าม</th>
+      <th style="padding:7px 6px;text-align:center;border-bottom:1px solid #eee;color:#aaa">ขาด</th>
+      <th style="padding:7px 6px;text-align:center;border-bottom:1px solid #eee;color:#c62828">หักรวม</th>
+    </tr></thead><tbody>`;
+  Object.values(byEmp).forEach(r=>{
+    const lateStr=r.lateDeduct>0?`-${Math.round(r.lateDeduct)}฿`:'-';
+    tbl+=`<tr style="border-bottom:1px solid #f5f5f5">
+      <td style="padding:6px 10px;font-weight:600">${r.name}</td>
+      <td style="padding:6px;text-align:center;color:#2e7d32;font-weight:${r.in>0?'600':'400'}">${r.in||'-'}</td>
+      <td style="padding:6px;text-align:center;color:#f57c00">${r.blocked||'-'}</td>
+      <td style="padding:6px;text-align:center;color:#aaa">${r.absent||'-'}</td>
+      <td style="padding:6px;text-align:center;color:#c62828;font-weight:${r.lateDeduct>0?'600':'400'}">${lateStr}</td>
+    </tr>`;
+  });
+  tbl+=`</tbody></table>`;
+  if(unknownNames.size>0)tbl+=`<div style="font-size:11px;color:#e65100;padding:6px 10px">⚠️ ชื่อไม่รู้จัก: ${[...unknownNames].join(', ')}</div>`;
+  document.getElementById('zk-preview-table').innerHTML=tbl;
+  const btn=document.getElementById('zk-confirm-btn');
+  if(toImport.length===0){btn.disabled=true;btn.style.opacity='0.4';}
+  else{btn.disabled=false;btn.style.opacity='1';}
+  document.getElementById('zk-preview-modal').classList.add('show');
+}
+
+function confirmZKImport(){
+  if(!zkPending)return;
+  let imported=0;
+  // สะสมหักสาย + หักออกก่อน แยกกัน ต่อ key+empId
+  const lateMap={};
+  zkPending.pending.forEach(p=>{
+    if(p.actualHrs===0)return;
+    const mk=p.key+'|'+p.empId;
+    if(!lateMap[mk])lateMap[mk]={key:p.key,empId:p.empId,lateTotal:0,earlyTotal:0,lateInfo:[0,0,0,0,0,0,0],earlyInfo:[0,0,0,0,0,0,0]};
+    lateMap[mk].lateTotal+=(p.lateDeductBaht||0);
+    lateMap[mk].earlyTotal+=(p.earlyOutBaht||0);
+    lateMap[mk].lateInfo[p.dayIdx]=p.lateMins||0;
+    lateMap[mk].earlyInfo[p.dayIdx]=p.earlyOutMins||0;
+  });
+  zkPending.pending.forEach(p=>{
+    if(p.blocked||p.actualHrs===0)return;
+    if(!weekData[p.key])weekData[p.key]={};
+    if(!weekData[p.key][p.empId])weekData[p.key][p.empId]=initEmpData();
+    const ed=weekData[p.key][p.empId];
+    if((ed.workhrs[p.dayIdx]||0)>0)return;
+    ed.workhrs[p.dayIdx]=Math.min(p.actualHrs,p.stdHrs);
+    ed.present[p.dayIdx]=true;
+    ed.ot[p.dayIdx]=Math.round(p.ot3Hrs*10)/10;
+    imported++;
+  });
+  Object.values(lateMap).forEach(lm=>{
+    if(!weekData[lm.key])weekData[lm.key]={};
+    if(!weekData[lm.key][lm.empId])weekData[lm.key][lm.empId]=initEmpData();
+    const ed=weekData[lm.key][lm.empId];
+    ed.lateDeduct=Math.round(lm.lateTotal);
+    ed.earlyDeduct=Math.round(lm.earlyTotal);
+    ed.lateInfo=lm.lateInfo;
+    ed.earlyInfo=lm.earlyInfo;
+  });
+  zkPending=null;
+  closeZKPreview();
+  renderSchedule();
+  logAction('zk_confirm',`นำเข้า ${imported} วัน สัปดาห์ ${weekDateRange(currentWeekStart)}`);
+  setTimeout(()=>alert(`✅ นำเข้า ZKTime สำเร็จ ${imported} วัน`),100);
+}
+
+function closeZKPreview(){
+  document.getElementById('zk-preview-modal').classList.remove('show');
+  if(zkPending)logAction('zk_cancel','ยกเลิก ZKTime import');
+  zkPending=null;
+}
+function getSatWeekOfMonth(sat){const fd=new Date(sat.getFullYear(),sat.getMonth(),1);let count=0,cur=new Date(fd);while(cur<=sat){if(cur.getDay()===6)count++;cur.setDate(cur.getDate()+1);}return count;}
+function isLastSatOfMonth(sat){const nextSat=new Date(sat);nextSat.setDate(nextSat.getDate()+7);return nextSat.getMonth()!==sat.getMonth();}
+function isPanPayWeek(monday){const sat=getSaturday(monday);const wn=getSatWeekOfMonth(sat);return wn===2||isLastSatOfMonth(sat);}
+function isPanEOM(monday){return isLastSatOfMonth(getSaturday(monday));}
+function hrsClass(h,stdHrs){if(!h||h<=0)return'';if(h>=stdHrs)return'full';if(h>=stdHrs/2)return'partial';return'late';}
+function calcDayPay(emp,h){if(!h||h<=0)return 0;return emp.rate;}
+// ===== โควต้าลา/ขาด ประจำปี (เฉพาะพนักงานเงินเดือน) =====
+const LEAVE_QUOTA_HRS = 120; // 15 วัน × 8 ชม.
+
+// คำนวณชั่วโมงขาดสะสมทั้งปีของพนักงาน 1 คน (ถึงสัปดาห์ที่กำหนด)
+// return {usedHrs, quotaHrs, overHrs, remainHrs}
+// แปลง week key เป็น Date (local time) รองรับทั้ง "2026-05-18" และ "Mon May 18 2026..."
+function parseWeekKey(key){
+  if(!key)return null;
+  const s=String(key).trim();
+  // format ISO: 2026-05-18
+  const m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if(m)return new Date(+m[1],+m[2]-1,+m[3]);
+  // format เก่า: Mon May 18 2026 ...
+  const d=new Date(s);
+  if(!isNaN(d))return new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  return null;
+}
+
+function calcLeaveQuota(emp, upToMonday){
+  if(emp.type!=='salary')return null; // เฉพาะ salary
+  const year=upToMonday.getFullYear();
+  const now=new Date();
+  const WORK_END_HOUR=17;
+  let usedHrs=0;
+  Object.keys(weekData).forEach(key=>{
+    const monday=parseWeekKey(key);
+    if(!monday||isNaN(monday))return;
+    if(monday.getFullYear()!==year)return;
+    if(monday>upToMonday)return;
+    const ed=weekData[key][emp.id];
+    if(!ed||!ed.workhrs)return;
+    // หาวันสุดท้ายที่ import แล้ว
+    let lastDataDay=-1;
+    for(let i=0;i<7;i++){if((ed.workhrs[i]||0)>0||(ed.present&&ed.present[i]))lastDataDay=i;}
+    if(lastDataDay<0)return; // สัปดาห์ว่างเปล่า
+    const offdays=Array.isArray(emp.offday)?emp.offday:[emp.offday];
+    for(let d=0;d<=lastDataDay;d++){
+      if(offdays.includes((d+1)%7))continue;
+      const dt=new Date(monday);dt.setDate(dt.getDate()+d);
+      const dayEnd=new Date(dt);dayEnd.setHours(WORK_END_HOUR,0,0,0);
+      if(now<dayEnd)continue; // ยังไม่จบเวลางาน
+      const worked=ed.workhrs[d]||0;
+      const stdHrs=emp.hrs||8;
+      if(worked<stdHrs)usedHrs+=(stdHrs-worked);
+    }
+  });
+  usedHrs=Math.round(usedHrs*10)/10;
+  const overHrs=Math.max(0,usedHrs-LEAVE_QUOTA_HRS);
+  return {usedHrs,quotaHrs:LEAVE_QUOTA_HRS,overHrs,remainHrs:Math.max(0,LEAVE_QUOTA_HRS-usedHrs)};
+}
+
+// หักเงินเฉพาะชั่วโมงที่เกินโควต้า ในรอบจ่ายปัจจุบัน
+function calcQuotaDeductThisWeek(emp, monday){
+  if(emp.type!=='salary')return 0;
+  const isPayWeek=!emp.biweek||isPanPayWeek(monday);
+  if(!isPayWeek)return 0; // จ่ายเฉพาะ pay week
+  // หาจุดเริ่มรอบจ่าย: biweek = ย้อน 1 สัปดาห์, ปกติ = สัปดาห์นี้
+  const cycleStart=new Date(monday);
+  if(emp.biweek)cycleStart.setDate(cycleStart.getDate()-7);
+  const prevCycleEnd=new Date(cycleStart);prevCycleEnd.setDate(prevCycleEnd.getDate()-7);
+  // ชั่วโมงขาดสะสม ก่อนรอบนี้ vs จบรอบนี้
+  const usedBefore=(()=>{const q=calcLeaveQuota(emp,prevCycleEnd);return q?q.usedHrs:0;})();
+  const usedNow=(()=>{const q=calcLeaveQuota(emp,monday);return q?q.usedHrs:0;})();
+  const overBefore=Math.max(0,usedBefore-LEAVE_QUOTA_HRS);
+  const overNow=Math.max(0,usedNow-LEAVE_QUOTA_HRS);
+  const overThisCycle=overNow-overBefore;
+  if(overThisCycle<=0)return 0;
+  const perHour=emp.rate/26/(emp.hrs||8); // เงินเดือน/26วัน/ชม.ต่อวัน
+  return Math.round(overThisCycle*perHour);
+}
+
+// ดึงรายละเอียดวันขาด/ลาทั้งปี → [{date, dayName, missingHrs, worked}]
+function getLeaveDetail(emp, upToMonday){
+  if(emp.type!=='salary')return [];
+  const year=upToMonday.getFullYear();
+  const now=new Date();
+  const WORK_END_HOUR=17;
+  const list=[];
+  const offdays=Array.isArray(emp.offday)?emp.offday:[emp.offday];
+  const dayNames=['จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์','อาทิตย์'];
+  Object.keys(weekData).sort().forEach(key=>{
+    const monday=parseWeekKey(key);
+    if(!monday||isNaN(monday)||monday.getFullYear()!==year||monday>upToMonday)return;
+    const ed=weekData[key][emp.id];
+    if(!ed||!ed.workhrs)return;
+    let lastDataDay=-1;
+    for(let i=0;i<7;i++){if((ed.workhrs[i]||0)>0||(ed.present&&ed.present[i]))lastDataDay=i;}
+    if(lastDataDay<0)return;
+    for(let d=0;d<=lastDataDay;d++){
+      if(offdays.includes((d+1)%7))continue;
+      const date=new Date(monday);date.setDate(date.getDate()+d);
+      const dayEnd=new Date(date);dayEnd.setHours(WORK_END_HOUR,0,0,0);
+      if(now<dayEnd)continue;
+      const worked=ed.workhrs[d]||0;
+      const stdHrs=emp.hrs||8;
+      if(worked<stdHrs){
+        list.push({date,dayName:dayNames[d],missingHrs:Math.round((stdHrs-worked)*10)/10,worked});
+      }
+    }
+  });
+  return list;
+}
+
+// สร้าง HTML popup แสดงรายละเอียดโควต้า
+function showQuotaDetail(empId){
+  const emp=employees.find(e=>e.id===empId);if(!emp)return;
+  const q=calcLeaveQuota(emp,currentWeekStart);if(!q)return;
+  const detail=getLeaveDetail(emp,currentWeekStart);
+  const fmt=d=>`${d.getDate()}/${d.getMonth()+1}/${(d.getFullYear()+543).toString().slice(-2)}`;
+  let rows=detail.map(item=>{
+    const isFull=item.worked===0;
+    return `<tr style="border-bottom:1px solid #f5f5f5">
+      <td style="padding:6px 10px">${fmt(item.date)}</td>
+      <td style="padding:6px 10px">${item.dayName}</td>
+      <td style="padding:6px 10px;text-align:center;color:${isFull?'#c62828':'#f57c00'};font-weight:600">${isFull?'ขาดทั้งวัน':`มา ${item.worked} ชม.`}</td>
+      <td style="padding:6px 10px;text-align:right;font-weight:600">${item.missingHrs} ชม.</td>
+    </tr>`;
+  }).join('');
+  if(!detail.length)rows=`<tr><td colspan="4" style="text-align:center;padding:20px;color:#aaa">ยังไม่มีวันขาด/ลาในปีนี้ 🎉</td></tr>`;
+  const pct=Math.min(100,q.usedHrs/q.quotaHrs*100);
+  const barColor=q.overHrs>0?'#c62828':(pct>75?'#f57c00':'#2e7d32');
+  document.getElementById('quota-detail-title').textContent=`โควต้าลา/ขาด — ${emp.name} ปี ${currentWeekStart.getFullYear()+543}`;
+  document.getElementById('quota-detail-body').innerHTML=`
+    <div style="background:#f8f9fa;border-radius:10px;padding:12px 16px;margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span style="font-weight:600;color:#555">ใช้ไป ${q.usedHrs} ชม. (${(q.usedHrs/8).toFixed(1)} วัน)</span>
+        <span style="font-weight:700;color:${barColor}">${q.usedHrs}/${q.quotaHrs} ชม.</span>
+      </div>
+      <div style="height:10px;background:#e0e0e0;border-radius:5px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${barColor}"></div></div>
+      <div style="margin-top:6px;font-size:12px;color:${q.overHrs>0?'#c62828':'#2e7d32'};font-weight:600">${q.overHrs>0?`⚠️ เกินโควต้า ${q.overHrs} ชม. — หักเงินตามชั่วโมงที่เกิน`:`✅ เหลือ ${q.remainHrs} ชม. (${(q.remainHrs/8).toFixed(1)} วัน)`}</div>
+    </div>
+    <div style="font-size:12px;font-weight:600;color:#666;margin-bottom:6px">รายละเอียดวันขาด/ลา (${detail.length} วัน)</div>
+    <div style="max-height:320px;overflow-y:auto;border:1px solid #eee;border-radius:8px">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="background:#f5f5f5;position:sticky;top:0">
+          <th style="padding:8px 10px;text-align:left">วันที่</th>
+          <th style="padding:8px 10px;text-align:left">วัน</th>
+          <th style="padding:8px 10px;text-align:center">สถานะ</th>
+          <th style="padding:8px 10px;text-align:right">ขาด</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+  document.getElementById('quota-detail-modal').classList.add('show');
+}
+function closeQuotaDetail(){document.getElementById('quota-detail-modal').classList.remove('show');}
+
+// ===== รายละเอียดหักสาย =====
+// ดึงรายการวันที่มาสายของพนักงาน 1 คน (ทุกสัปดาห์ที่มี lateInfo)
+function getLateDetail(empId){
+  const emp=employees.find(e=>e.id===empId);if(!emp)return [];
+  const list=[];
+  const dayNames=['จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์','อาทิตย์'];
+  const perHour=emp.rate/(emp.type==='salary'?26:1)/(emp.hrs||8);
+  Object.keys(weekData).sort().forEach(key=>{
+    const monday=parseWeekKey(key);if(!monday)return;
+    const ed=weekData[key][empId];
+    if(!ed)return;
+    for(let d=0;d<7;d++){
+      const lateMins=(ed.lateInfo&&ed.lateInfo[d])||0;
+      const earlyMins=(ed.earlyInfo&&ed.earlyInfo[d])||0;
+      if(lateMins>5){
+        const deductMins=calcLateDeductMins(lateMins);
+        const baht=Math.round(deductMins/60*perHour);
+        const date=new Date(monday);date.setDate(date.getDate()+d);
+        list.push({date,dayName:dayNames[d],type:'สาย',mins:lateMins,deductMins,baht});
+      }
+      if(earlyMins>0&&emp.type!=='salary'){
+        const baht=Math.round(earlyMins/60*perHour);
+        const date=new Date(monday);date.setDate(date.getDate()+d);
+        list.push({date,dayName:dayNames[d],type:'ออกก่อน',mins:earlyMins,deductMins:earlyMins,baht});
+      }
+    }
+  });
+  list.sort((a,b)=>a.date-b.date);
+  return list;
+}
+
+function showLateDetail(empId){
+  const emp=employees.find(e=>e.id===empId);if(!emp)return;
+  const detail=getLateDetail(empId);
+  const fmt=d=>`${d.getDate()}/${d.getMonth()+1}/${(d.getFullYear()+543).toString().slice(-2)}`;
+  const totalBaht=detail.reduce((s,x)=>s+x.baht,0);
+  const lateCount=detail.filter(x=>x.type==='สาย').length;
+  const earlyCount=detail.filter(x=>x.type==='ออกก่อน').length;
+  let rows=detail.map(x=>{
+    const typeColor=x.type==='สาย'?'#e65100':'#6a1b9a';
+    const deductStr=x.type==='สาย'?`หัก ${x.deductMins} นาที`:`หัก ${x.deductMins} นาที (ตามจริง)`;
+    return `<tr style="border-bottom:1px solid #f5f5f5">
+      <td style="padding:6px 10px">${fmt(x.date)}</td>
+      <td style="padding:6px 10px">${x.dayName}</td>
+      <td style="padding:6px 10px;text-align:center"><span style="color:${typeColor};font-weight:600;font-size:11px">${x.type}</span></td>
+      <td style="padding:6px 10px;text-align:center;color:${typeColor};font-weight:600">${x.mins} นาที</td>
+      <td style="padding:6px 10px;text-align:center;color:#888;font-size:11px">${deductStr}</td>
+      <td style="padding:6px 10px;text-align:right;color:#c62828;font-weight:600">-฿${x.baht}</td>
+    </tr>`;
+  }).join('');
+  if(!detail.length)rows=`<tr><td colspan="6" style="text-align:center;padding:20px;color:#aaa">ไม่มีประวัติมาสาย/ออกก่อน 🎉</td></tr>`;
+  document.getElementById('late-detail-title').textContent=`รายละเอียดหักสาย/ออกก่อน — ${emp.name}`;
+  document.getElementById('late-detail-body').innerHTML=`
+    <div style="background:#fff3e0;border-radius:10px;padding:12px 16px;margin-bottom:12px;display:flex;justify-content:space-between">
+      <span style="font-weight:600;color:#e65100">สาย ${lateCount} วัน · ออกก่อน ${earlyCount} วัน</span>
+      <span style="font-weight:700;color:#c62828">หักรวม -฿${totalBaht.toLocaleString()}</span>
+    </div>
+    <div style="font-size:11px;color:#aaa;margin-bottom:8px">สาย: ≤5 ไม่หัก · 6–10 หัก 10 นาที · 11–30 หัก 30 · เกินนั้นปัดขึ้นทุก 30 นาที<br>ออกก่อน: หักตามจริง (เฉพาะรายวัน · เงินเดือนเข้าโควต้าลา)</div>
+    <div style="max-height:320px;overflow-y:auto;border:1px solid #eee;border-radius:8px">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="background:#f5f5f5;position:sticky;top:0">
+          <th style="padding:8px 10px;text-align:left">วันที่</th>
+          <th style="padding:8px 10px;text-align:left">วัน</th>
+          <th style="padding:8px 10px;text-align:center">ประเภท</th>
+          <th style="padding:8px 10px;text-align:center">จริง</th>
+          <th style="padding:8px 10px;text-align:center">คิดหัก</th>
+          <th style="padding:8px 10px;text-align:right">เงิน</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+  document.getElementById('late-detail-modal').classList.add('show');
+}
+function closeLateDetail(){document.getElementById('late-detail-modal').classList.remove('show');}
+
+function renderQuotaTab(){
+  document.getElementById('quota-year-label').textContent=`ปี ${currentWeekStart.getFullYear()+543}`;
+  const salaryEmps=employees.filter(e=>e.type==='salary');
+  const div=document.getElementById('quota-cards');
+  if(!salaryEmps.length){div.innerHTML='<div style="color:#aaa;font-size:13px;padding:1rem;text-align:center">ไม่มีพนักงานเงินเดือน</div>';return;}
+  div.innerHTML=salaryEmps.map(emp=>{
+    const q=calcLeaveQuota(emp,currentWeekStart);
+    const detail=getLeaveDetail(emp,currentWeekStart);
+    const pct=Math.min(100,q.usedHrs/q.quotaHrs*100);
+    const barColor=q.overHrs>0?'#c62828':(pct>75?'#f57c00':'#2e7d32');
+    const fullDays=detail.filter(d=>d.worked===0).length;
+    const partialDays=detail.filter(d=>d.worked>0).length;
+    return `<div onclick="showQuotaDetail('${emp.id}')" style="border:1px solid #e5e5e5;border-radius:12px;padding:16px;margin-bottom:12px;cursor:pointer;transition:.2s" onmouseover="this.style.boxShadow='0 2px 8px rgba(0,0,0,.08)'" onmouseout="this.style.boxShadow='none'">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:15px;font-weight:700;color:#1a1a1a">${emp.name} <i class="ti ti-external-link" style="font-size:12px;color:#aaa"></i></div>
+        <div style="font-size:16px;font-weight:700;color:${barColor}">${q.usedHrs}<span style="font-size:12px;color:#aaa">/${q.quotaHrs} ชม.</span></div>
+      </div>
+      <div style="height:10px;background:#e0e0e0;border-radius:5px;overflow:hidden;margin-bottom:8px"><div style="height:100%;width:${pct}%;background:${barColor}"></div></div>
+      <div style="display:flex;gap:12px;font-size:12px;color:#666">
+        <span>🔴 ขาดเต็มวัน: <b>${fullDays}</b></span>
+        <span>🟠 มาไม่ครบ: <b>${partialDays}</b></span>
+        <span style="margin-left:auto;color:${q.overHrs>0?'#c62828':'#2e7d32'};font-weight:600">${q.overHrs>0?`เกิน ${q.overHrs} ชม.`:`เหลือ ${q.remainHrs} ชม. (${(q.remainHrs/8).toFixed(1)} วัน)`}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+
+function calcBaseFromHrs(emp,workhrs,days,monday){
+  if(emp.type==='salary'){if(emp.biweek){if(!isPanPayWeek(monday))return 0;return emp.rate/2;}return days>=6?emp.rate/4:emp.rate/4/6*days;}
+  return workhrs.reduce((sum,h)=>sum+calcDayPay(emp,h),0);
+}
+function calcSSO(emp,base){return emp.sso?Math.round(base*0.05):0;}
+function calcEOMBonus(emp,monday){return(emp.biweek&&emp.eomBonus&&isPanEOM(monday))?emp.eomBonus:0;}
+function calcOTPay(emp,otArr){
+  if(!emp.otFlat||!emp.otFlatHrs)return Math.round(otArr.reduce((a,b)=>a+(+b||0),0)*emp.ot);
+  let pay=0;
+  otArr.forEach(h=>{
+    const hrs=+h||0;
+    if(hrs<=0)return;
+    if(hrs>=emp.otFlatHrs)pay+=emp.otFlat;
+    else pay+=hrs*emp.ot;
+  });
+  return Math.round(pay);
+}
+function calcPay(emp,workhrs,days,otArr,bonus,deduct,monday,lateDeduct,earlyDeduct){
+  const otTotal=otArr.reduce((a,b)=>a+(+b||0),0);
+  const isPayWeek=!emp.biweek||isPanPayWeek(monday);
+  const base=isPayWeek?calcBaseFromHrs(emp,workhrs,days,monday):0;
+  const sso=isPayWeek?calcSSO(emp,calcBaseFromHrs(emp,workhrs,days,monday)):0;
+  const eom=isPayWeek?calcEOMBonus(emp,monday):0;
+  const quotaDed=isPayWeek?calcQuotaDeductThisWeek(emp,monday):0;
+  const otPay=calcOTPay(emp,otArr);const misc=(bonus||0)-(deduct||0)-(lateDeduct||0)-(earlyDeduct||0)-quotaDed;
+  if(!isPayWeek&&otPay===0&&misc===0)return null;
+  return Math.round(base+otPay+misc-sso+eom);
+}
+
+function renderSchedule(){
+  const sat=getSaturday(currentWeekStart);
+  document.getElementById('week-label').textContent='สัปดาห์ '+weekDateRange(currentWeekStart)+' (จ่าย วันเสาร์)';
+  const isPanPay=isPanPayWeek(currentWeekStart);const isPanEnd=isPanEOM(currentWeekStart);const wn=getSatWeekOfMonth(sat);
+  const notice=document.getElementById('pan-notice');
+  if(isPanPay){const label=isPanEnd?'รอบที่ 2 (สิ้นเดือน)':'รอบที่ 1 (กลางเดือน)';notice.innerHTML=`<div class="info-box"><i class="ti ti-coin" style="font-size:14px;vertical-align:-2px;margin-right:4px"></i><strong>แพน — ${label}</strong></div>`;}
+  else{notice.innerHTML=`<div class="info-box warn"><i class="ti ti-clock-pause" style="font-size:14px;vertical-align:-2px;margin-right:4px"></i><strong>แพน — สัปดาห์นี้ยังไม่ถึงรอบจ่าย</strong></div>`;}
+  const wd=getWeekData();const dates=[];for(let i=0;i<7;i++){const dt=new Date(currentWeekStart);dt.setDate(dt.getDate()+i);dates.push(dt);}
+  let html='<thead><tr><th class="name-col">พนักงาน</th>';
+  dates.forEach((dt,i)=>{html+=`<th style="width:50px">${DAYS[i]}<br><span style="font-size:10px;color:#aaa">${dt.getDate()}/${dt.getMonth()+1}</span></th>`;});
+  html+='<th style="width:40px">วัน/ชม.</th><th style="width:56px">OT (ชม.)</th><th style="width:54px">+บาท</th><th style="width:54px">-บาท</th><th style="width:54px;color:#c62828">หักสาย</th><th style="width:54px;color:#6a1b9a">หักออกก่อน</th><th style="width:52px">ปกส.</th><th style="width:54px">หมายเหตุ</th></tr></thead><tbody>';
+  let totalPresentToday=0,totalOT=0,totalPayEst=0;const todayIdx=(new Date().getDay()+6)%7;
+  employees.forEach(emp=>{
+    if(!wd[emp.id])wd[emp.id]=initEmpData();const ed=wd[emp.id];if(!ed.workhrs)ed.workhrs=[0,0,0,0,0,0,0];
+    const isSkip=emp.biweek&&!isPanPayWeek(currentWeekStart);const otArr=ed.ot.map(v=>+v||0);const otTotal=otArr.reduce((a,b)=>a+b,0);
+    const workhrs=ed.workhrs.map(v=>+v||0);const days=ed.present.filter(Boolean).length;
+    const base=calcBaseFromHrs(emp,workhrs,days,currentWeekStart);const sso=calcSSO(emp,base);const eom=calcEOMBonus(emp,currentWeekStart);
+    const pay=calcPay(emp,workhrs,days,otArr,ed.bonus,ed.deduct,currentWeekStart,ed.lateDeduct,ed.earlyDeduct);const totalWorkHrs=workhrs.reduce((a,b)=>a+b,0);
+    if(pay!==null){totalOT+=otTotal;totalPayEst+=(pay||0);}if(ed.present[todayIdx])totalPresentToday++;
+    const otSummary=otArr.map((v,i)=>v>0?`${DAYS[i]}${v}ชม.`:'').filter(Boolean).join(', ');
+    const nameCell=`${emp.name}<br><span class="badge ${emp.type==='salary'?'badge-salary':'badge-daily'}">${emp.type==='salary'?'เดือน':'วัน'}</span>${emp.sso?'<br><span class="badge badge-sso">ปกส.</span>':''}${emp.biweek?'<br><span class="badge badge-biweek">2สัปดาห์</span>':''}`;
+    const summaryCell=emp.type==='daily'?`<div style="font-size:12px;font-weight:600;color:#2e7d32">${days}วัน</div><div style="font-size:10px;color:#888">${totalWorkHrs.toFixed(1)}ชม.</div>`:`<div style="font-size:12px;font-weight:600;color:#2e7d32">${days}วัน</div>`;
+    if(isSkip){
+      html+=`<tr class="skip-week"><td class="name-col" rowspan="3">${nameCell}</td>`;
+      for(let i=0;i<7;i++)html+=`<td><input type="checkbox" class="chk" ${ed.present[i]?'checked':''} onchange="toggleDay('${emp.id}',${i},this.checked)"></td>`;
+      html+=`<td class="total-col" rowspan="3">${summaryCell}</td>`;
+      html+=`<td rowspan="3" style="vertical-align:middle"><div style="font-size:12px;font-weight:600;color:#e65100">${otTotal>0?otTotal.toFixed(1)+'ชม.':'-'}</div>${otSummary?`<div style="font-size:10px;color:#aaa;line-height:1.4;margin-top:2px">${otSummary}</div>`:''}</td>`;
+      html+=`<td rowspan="3" style="vertical-align:middle;text-align:center">
+        <input type="number" value="${ed.bonus||''}" min="0" placeholder="0" style="width:44px;display:block;margin:0 auto 3px">
+        <input type="text" value="${ed.bonusNote||''}" placeholder="edit" style="width:44px;font-size:10px;padding:2px 4px;border:1px solid #ddd;border-radius:4px;display:block;margin:0 auto;color:#555;font-family:'Sarabun',sans-serif" onchange="setBonusNote('${emp.id}',this.value)">
+      </td>`;
+      html+=`<td rowspan="3" style="vertical-align:middle;text-align:center">
+        <input type="number" value="${ed.deduct||''}" min="0" placeholder="0" style="width:44px;display:block;margin:0 auto 3px">
+        <input type="text" value="${ed.deductNote||''}" placeholder="edit" style="width:44px;font-size:10px;padding:2px 4px;border:1px solid #ddd;border-radius:4px;display:block;margin:0 auto;color:#555;font-family:'Sarabun',sans-serif" onchange="setDeductNote('${emp.id}',this.value)">
+      </td>`;
+      html+=`<td rowspan="3" style="vertical-align:middle;text-align:center">
+        <input type="number" value="${ed.lateDeduct||''}" min="0" placeholder="0" style="width:44px;display:block;margin:0 auto;color:#c62828;font-weight:600" onchange="setLateDeduct('${emp.id}',this.value)">
+        ${(( ed.lateInfo&&ed.lateInfo.some(m=>m>5))||(ed.earlyInfo&&ed.earlyInfo.some(m=>m>0)))?`<span onclick="showLateDetail('${emp.id}')" style="font-size:10px;color:#1a73e8;cursor:pointer;display:block;margin-top:2px">ดูรายละเอียด</span>`:''}
+      </td>`;
+      html+=`<td rowspan="3" style="vertical-align:middle;text-align:center">
+        <input type="number" value="${ed.earlyDeduct||''}" min="0" placeholder="0" style="width:44px;display:block;margin:0 auto;color:#6a1b9a;font-weight:600" onchange="setEarlyDeduct('${emp.id}',this.value)">
+      </td>`;
+      html+=`<td class="skip-col" rowspan="3" style="text-align:center;font-size:10px">ยังไม่ถึง<br>รอบจ่าย</td>`;
+      html+=`<td rowspan="3"><input class="note-input" value="${ed.note||''}" placeholder="หมายเหตุ" style="width:50px" onchange="setNote('${emp.id}',this.value)"></td></tr>`;
+      html+=`<tr class="hrs-row">`;for(let i=0;i<7;i++){const h=workhrs[i];const cls=hrsClass(h,emp.hrs);html+=`<td><input type="number" class="day-input ${cls}" value="${h||''}" min="0" max="24" step="0.5" placeholder="${emp.hrs}" title="${DAYS_FULL[i]}" onchange="setWorkHrs('${emp.id}',${i},this.value,${emp.hrs})"></td>`;}
+      html+=`</tr><tr class="ot-row">`;for(let i=0;i<7;i++){const v=otArr[i];html+=`<td><input type="number" class="ot-input${v>0?' has-value':''}" value="${v||''}" min="0" step="0.5" placeholder="OT" title="OT ${DAYS_FULL[i]}" onchange="setOTDay('${emp.id}',${i},this.value);this.className='ot-input'+(+this.value>0?' has-value':'')"></td>`;}
+      html+=`</tr>`;return;
+    }
+    html+=`<tr><td class="name-col" rowspan="3">${nameCell}</td>`;
+    for(let i=0;i<7;i++){html+=`<td><input type="checkbox" class="chk" ${ed.present[i]?'checked':''} onchange="toggleDay('${emp.id}',${i},this.checked)"></td>`;}
+    html+=`<td class="total-col" rowspan="3" style="vertical-align:middle">${summaryCell}</td>`;
+    html+=`<td rowspan="3" style="vertical-align:middle"><div style="font-size:12px;font-weight:600;color:#e65100">${otTotal>0?otTotal.toFixed(1)+'ชม.':'-'}</div>${otSummary?`<div style="font-size:10px;color:#aaa;line-height:1.4;margin-top:2px">${otSummary}</div>`:''}</td>`;
+    html+=`<td rowspan="3" style="vertical-align:middle;text-align:center">
+      <input type="number" value="${ed.bonus||''}" min="0" placeholder="0" style="width:44px;display:block;margin:0 auto 3px" onchange="setBonus('${emp.id}',this.value)">
+      <input type="text" value="${ed.bonusNote||''}" placeholder="edit" style="width:44px;font-size:10px;padding:2px 4px;border:1px solid #ddd;border-radius:4px;display:block;margin:0 auto;color:#555;font-family:'Sarabun',sans-serif" onchange="setBonusNote('${emp.id}',this.value)">
+    </td>`;
+    html+=`<td rowspan="3" style="vertical-align:middle;text-align:center">
+      <input type="number" value="${ed.deduct||''}" min="0" placeholder="0" style="width:44px;display:block;margin:0 auto 3px" onchange="setDeduct('${emp.id}',this.value)">
+      <input type="text" value="${ed.deductNote||''}" placeholder="edit" style="width:44px;font-size:10px;padding:2px 4px;border:1px solid #ddd;border-radius:4px;display:block;margin:0 auto;color:#555;font-family:'Sarabun',sans-serif" onchange="setDeductNote('${emp.id}',this.value)">
+    </td>`;
+    html+=`<td rowspan="3" style="vertical-align:middle;text-align:center">
+      <input type="number" value="${ed.lateDeduct||''}" min="0" placeholder="0" style="width:44px;display:block;margin:0 auto;color:#c62828;font-weight:600" onchange="setLateDeduct('${emp.id}',this.value)">
+      ${(( ed.lateInfo&&ed.lateInfo.some(m=>m>5))||(ed.earlyInfo&&ed.earlyInfo.some(m=>m>0)))?`<span onclick="showLateDetail('${emp.id}')" style="font-size:10px;color:#1a73e8;cursor:pointer;display:block;margin-top:2px">ดูรายละเอียด</span>`:''}
+    </td>`;
+    html+=`<td rowspan="3" style="vertical-align:middle;text-align:center">
+      <input type="number" value="${ed.earlyDeduct||''}" min="0" placeholder="0" style="width:44px;display:block;margin:0 auto;color:#6a1b9a;font-weight:600" onchange="setEarlyDeduct('${emp.id}',this.value)">
+    </td>`;
+    html+=`<td class="sso-col" rowspan="3">${sso>0?'-฿'+sso.toLocaleString():'-'}</td>`;
+    html+=`<td rowspan="3"><input class="note-input" value="${ed.note||''}" placeholder="หมายเหตุ" style="width:50px" onchange="setNote('${emp.id}',this.value)"></td></tr>`;
+    html+=`<tr class="hrs-row">`;for(let i=0;i<7;i++){const h=workhrs[i];const cls=hrsClass(h,emp.hrs);html+=`<td><input type="number" class="day-input ${cls}" value="${h||''}" min="0" max="24" step="0.5" placeholder="${emp.hrs}" title="${DAYS_FULL[i]}: ปกติ ${emp.hrs}ชม." onchange="setWorkHrs('${emp.id}',${i},this.value,${emp.hrs})"></td>`;}
+    html+=`</tr><tr class="ot-row">`;for(let i=0;i<7;i++){const v=otArr[i];html+=`<td><input type="number" class="ot-input${v>0?' has-value':''}" value="${v||''}" min="0" step="0.5" placeholder="OT" title="OT ${DAYS_FULL[i]}" onchange="setOTDay('${emp.id}',${i},this.value);this.className='ot-input'+(+this.value>0?' has-value':'')"></td>`;}
+    html+=`</tr>`;
+  });
+  html+='</tbody>';
+  document.getElementById('schedule-table').innerHTML=html;
+  document.getElementById('s-total-emp').textContent=employees.length;
+  document.getElementById('s-present').textContent=totalPresentToday;
+  document.getElementById('s-ot-total').textContent=totalOT.toFixed(1)+' ชม.';
+}
+
+function toggleDay(eid,idx,val){
+  const wd=getWeekData();if(!wd[eid])wd[eid]=initEmpData();
+  wd[eid].present[idx]=val;const emp=employees.find(e=>e.id===eid);
+  if(val){if(!wd[eid].workhrs)wd[eid].workhrs=[0,0,0,0,0,0,0];if(!wd[eid].workhrs[idx])wd[eid].workhrs[idx]=emp?emp.hrs:8;}
+  else{if(wd[eid].workhrs)wd[eid].workhrs[idx]=0;}
+  logAction('toggle_day',`${emp?emp.name:eid} ${['จ','อ','พ','พฤ','ศ','ส','อา'][idx]} ${val?'มา':'ไม่มา'}`);
+  renderSchedule();
+}
+function setWorkHrs(eid,idx,val,stdHrs){const wd=getWeekData();if(!wd[eid])wd[eid]=initEmpData();if(!wd[eid].workhrs)wd[eid].workhrs=[0,0,0,0,0,0,0];wd[eid].workhrs[idx]=+val||0;wd[eid].present[idx]=(+val||0)>0;const emp=employees.find(e=>e.id===eid);logAction('edit_workhrs',`${emp?emp.name:eid} ${['จ','อ','พ','พฤ','ศ','ส','อา'][idx]} = ${val}ชม.`);renderSchedule();}
+function setOTDay(eid,idx,val){const wd=getWeekData();if(!wd[eid])wd[eid]=initEmpData();wd[eid].ot[idx]=+val||0;const emp=employees.find(e=>e.id===eid);if(+val>0)logAction('edit_ot',`${emp?emp.name:eid} ${['จ','อ','พ','พฤ','ศ','ส','อา'][idx]} OT=${val}ชม.`);renderSchedule();}
+function setBonus(eid,val){const wd=getWeekData();if(wd[eid])wd[eid].bonus=+val||0;const emp=employees.find(e=>e.id===eid);logAction('edit_bonus',`${emp?emp.name:eid} +บาท=${val}`);renderSchedule();}
+function setDeduct(eid,val){const wd=getWeekData();if(wd[eid])wd[eid].deduct=+val||0;const emp=employees.find(e=>e.id===eid);logAction('edit_deduct',`${emp?emp.name:eid} -บาท=${val}`);renderSchedule();}
+function setLateDeduct(eid,val){const wd=getWeekData();if(!wd[eid])wd[eid]=initEmpData();wd[eid].lateDeduct=+val||0;const emp=employees.find(e=>e.id===eid);logAction('edit_late_deduct',`${emp?emp.name:eid} หักสาย=${val}`);renderSchedule();}
+function setEarlyDeduct(eid,val){const wd=getWeekData();if(!wd[eid])wd[eid]=initEmpData();wd[eid].earlyDeduct=+val||0;const emp=employees.find(e=>e.id===eid);logAction('edit_late_deduct',`${emp?emp.name:eid} หักออกก่อน=${val}`);renderSchedule();}
+function setBonusNote(eid,val){const wd=getWeekData();if(wd[eid])wd[eid].bonusNote=val;}
+function setDeductNote(eid,val){const wd=getWeekData();if(wd[eid])wd[eid].deductNote=val;}
+function setNote(eid,val){const wd=getWeekData();if(wd[eid])wd[eid].note=val;}
+function saveWeek(){
+  save();
+  const wd=getWeekData();
+  const now=new Date();
+  const timeStr=`${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')} น.`;
+  const dateStr=`${now.getDate()}/${now.getMonth()+1}/${(now.getFullYear()+543).toString().slice(-2)}`;
+  let rows='';let totalPay=0;let empCount=0;
+  employees.forEach(emp=>{
+    const ed=wd[emp.id];if(!ed)return;
+    const days=ed.present.filter(Boolean).length;
+    const workhrs=ed.workhrs?ed.workhrs.map(v=>+v||0):[0,0,0,0,0,0,0];
+    const otArr=ed.ot.map(v=>+v||0);const otTotal=otArr.reduce((a,b)=>a+b,0);
+    const bonus=ed.bonus||0;const deduct=ed.deduct||0;const lateDeduct=ed.lateDeduct||0;const earlyDeduct=ed.earlyDeduct||0;
+    const totalWorkHrs=workhrs.reduce((a,b)=>a+b,0);
+    if(days===0&&otTotal===0&&bonus===0)return;
+    empCount++;
+    const isPayWeek=!emp.biweek||isPanPayWeek(currentWeekStart);
+    const base=isPayWeek?calcBaseFromHrs(emp,workhrs,days,currentWeekStart):0;
+    const sso=isPayWeek?calcSSO(emp,calcBaseFromHrs(emp,workhrs,days,currentWeekStart)):0;
+    const eom=isPayWeek?calcEOMBonus(emp,currentWeekStart):0;
+    const otPay=calcOTPay(emp,otArr);
+    const quotaDed=isPayWeek?calcQuotaDeductThisWeek(emp,currentWeekStart):0;
+    const pay=Math.round(base+otPay+bonus-deduct-lateDeduct-earlyDeduct-quotaDed-sso+eom);
+    totalPay+=pay;
+    const details=[];
+    if(days>0)details.push(`${days}วัน ${totalWorkHrs.toFixed(1)}ชม.`);
+    if(otTotal>0)details.push(`OT ${otTotal}ชม.`);
+    if(bonus>0)details.push(`+฿${bonus.toLocaleString()}${ed.bonusNote?` (${ed.bonusNote})`:''}`);
+    if(deduct>0)details.push(`-฿${deduct.toLocaleString()}${ed.deductNote?` (${ed.deductNote})`:''}`);
+    if(lateDeduct>0)details.push(`หักสาย -฿${lateDeduct.toLocaleString()}`);
+    if(earlyDeduct>0)details.push(`หักออกก่อน -฿${earlyDeduct.toLocaleString()}`);
+    if(quotaDed>0)details.push(`เกินโควต้าลา -฿${quotaDed.toLocaleString()}`);
+    if(sso>0)details.push(`ปกส. -฿${sso.toLocaleString()}`);
+    rows+=`<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #f0f0f0">
+      <div>
+        <span style="font-size:13px;font-weight:600;color:#1a1a1a">${emp.name}</span>
+        <span style="font-size:11px;color:#aaa;margin-left:6px">${details.join(' · ')}</span>
+      </div>
+    </div>`;
+  });
+  if(!rows)rows='<div style="color:#aaa;text-align:center;padding:1rem;font-size:13px">ยังไม่มีการกรอกข้อมูลสัปดาห์นี้</div>';
+  document.getElementById('save-log-week').textContent='สัปดาห์ '+weekDateRange(currentWeekStart);
+  document.getElementById('save-log-time').textContent=`บันทึกเมื่อ ${dateStr} เวลา ${timeStr}`;
+  document.getElementById('save-log-rows').innerHTML=rows;
+  document.getElementById('save-log-count').textContent=`${empCount} คน`;
+  setTimeout(updateLogTotal, 50);
+  document.getElementById('save-log-modal').classList.add('show');
+}
+
+function renderSummary(){
+  const key=weekKey(sumWeekStart);const sat=getSaturday(sumWeekStart);const fmt=d=>`${d.getDate()}/${d.getMonth()+1}/${(d.getFullYear()+543).toString().slice(-2)}`;
+  document.getElementById('sum-week-label').textContent=`สัปดาห์ ${weekDateRange(sumWeekStart)} — จ่ายวันเสาร์ที่ ${fmt(sat)}`;
+  const wd=weekData[key]||{};let totalNet=0,totalOTPay=0,totalSSOAll=0,totalMisc=0,listHTML='';
+  employees.forEach(emp=>{
+    const isSkip=emp.biweek&&!isPanPayWeek(sumWeekStart);
+    const ed=wd[emp.id];const days=ed?ed.present.filter(Boolean).length:0;const workhrs=ed&&ed.workhrs?ed.workhrs.map(v=>+v||0):[0,0,0,0,0,0,0];const totalWorkHrs=workhrs.reduce((a,b)=>a+b,0);
+    const otArr=ed?ed.ot.map(v=>+v||0):[0,0,0,0,0,0,0];const otTotal=otArr.reduce((a,b)=>a+b,0);const bonus=ed?ed.bonus||0:0;const deduct=ed?ed.deduct||0:0;const lateDeduct=ed?ed.lateDeduct||0:0;const earlyDeduct=ed?ed.earlyDeduct||0:0;const note=ed?ed.note||'':'';
+    if(isSkip&&!otTotal&&!bonus&&!deduct)return;
+    if(!isSkip&&emp.type==='daily'&&totalWorkHrs===0&&!otTotal&&!bonus)return;
+    if(!isSkip&&emp.type!=='daily'&&!emp.biweek&&days===0&&!otTotal&&!bonus)return;
+    const isPayWeek=!emp.biweek||isPanPayWeek(sumWeekStart);
+    const base=isPayWeek?calcBaseFromHrs(emp,workhrs,days,sumWeekStart):0;
+    const sso=isPayWeek?calcSSO(emp,calcBaseFromHrs(emp,workhrs,days,sumWeekStart)):0;
+    const eom=isPayWeek?calcEOMBonus(emp,sumWeekStart):0;
+    const otPay=calcOTPay(emp,otArr);const total=Math.round(base+otPay+bonus-deduct-lateDeduct-earlyDeduct-sso+eom);
+    totalNet+=total;totalOTPay+=otPay;totalSSOAll+=sso;totalMisc+=(bonus-deduct-lateDeduct-earlyDeduct+eom);
+    const otDays=otArr.map((v,i)=>v>0?`${DAYS_FULL[i]} ${v}ชม.`:'').filter(Boolean).join(', ');
+    const hrsDetail=emp.type==='daily'?workhrs.map((h,i)=>h>0&&h<emp.hrs?`${DAYS[i]}${h}ชม.`:'').filter(Boolean).join(', '):'';
+    listHTML+=`<div class="summary-row" data-pay="${total}" style="cursor:pointer" onclick="this.querySelector('input[type=checkbox]').click()">
+      <input type="checkbox" checked onclick="event.stopPropagation();updateSummaryTotal()" style="width:17px;height:17px;accent-color:#1a73e8;cursor:pointer;flex-shrink:0;margin-top:3px">
+      <div class="avatar" style="flex-shrink:0">${emp.name.slice(0,2)}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600;color:#1a1a1a">${emp.name} <span class="badge ${emp.type==='salary'?'badge-salary':'badge-daily'}">${emp.type==='salary'?'เดือน':'วัน'}</span>${emp.sso&&isPayWeek?' <span class="badge badge-sso">ปกส.</span>':''}${emp.biweek?' <span class="badge badge-biweek">2สัปดาห์</span>':''}${eom?' <span class="badge badge-eom">+สิ้นเดือน</span>':''}${isSkip?' <span style="font-size:10px;color:#f57f17;background:#fff8e1;border:1px solid #ffe082;border-radius:6px;padding:1px 6px">OT เท่านั้น</span>':''}</div>
+        <div style="font-size:11px;color:#888;margin-top:3px;line-height:1.6">${base>0?`ค่าแรง ฿${Math.round(base).toLocaleString()}`:isSkip?'ไม่รวมเงินเดือน (รอรอบถัดไป)':''}${sso?` · หักปกส. -฿${sso.toLocaleString()}`:''}${eom?` · +สิ้นเดือน ฿${eom.toLocaleString()}`:''}${otTotal?` · OT ${otDays} = ฿${otPay.toLocaleString()}`:''}${bonus?` · +฿${bonus.toLocaleString()}${ed&&ed.bonusNote?` <span style="color:#aaa">(${ed.bonusNote})</span>`:''}`:'' }${deduct?` · -฿${deduct.toLocaleString()}${ed&&ed.deductNote?` <span style="color:#aaa">(${ed.deductNote})</span>`:''}`:'' }${note?' · '+note:''}</div>
+      </div>
+      <div style="font-size:16px;font-weight:700;color:#1a1a1a;white-space:nowrap">฿${total.toLocaleString()}</div>
+    </div>`;
+  });
+  if(!listHTML)listHTML='<div style="text-align:center;color:#aaa;padding:2rem;font-size:13px">ยังไม่มีข้อมูลสัปดาห์นี้<br>กรอกข้อมูลในแท็บ "ตารางงาน" ก่อนนะคะ</div>';
+  document.getElementById('summary-list').innerHTML=listHTML;
+  setTimeout(updateSummaryTotal, 50);
+  document.getElementById('ss-ot').textContent='฿'+Math.round(totalOTPay).toLocaleString();
+  document.getElementById('ss-sso').textContent='-฿'+Math.round(totalSSOAll).toLocaleString();
+  document.getElementById('ss-misc').textContent=(totalMisc>=0?'+':'')+Math.round(totalMisc).toLocaleString();
+}
+
+function updateSummaryTotal() {
+  let total = 0; let count = 0;
+  document.querySelectorAll('#summary-list .summary-row').forEach(row => {
+    const cb = row.querySelector('input[type=checkbox]');
+    if (cb && cb.checked) { total += parseFloat(row.dataset.pay) || 0; count++; }
+  });
+  const el = document.getElementById('ss-total');
+  if (el) el.textContent = '฿' + Math.round(total).toLocaleString();
+}
+
+function toggleNewSalaryOpts(){document.getElementById('new-salary-opts').style.display=document.getElementById('new-type').value==='salary'?'block':'none';}
+function addEmployee(){
+  const name=document.getElementById('new-name').value.trim();const type=document.getElementById('new-type').value;const rate=+document.getElementById('new-rate').value;const ot=+document.getElementById('new-ot').value||80;const hrs=+document.getElementById('new-hrs').value||8;
+  const offday=[...document.querySelectorAll('.new-offday-chk:checked')].map(c=>+c.value);
+  const sso=document.getElementById('new-sso').checked;
+  const biweek=type==='salary'&&document.getElementById('new-biweek').checked;const eomBonus=biweek&&document.getElementById('new-eombonus').checked?+document.getElementById('new-eomamt').value||0:0;
+  if(!name||!rate){alert('กรุณากรอกชื่อและค่าจ้าง');return;}
+  employees.push({id:'e'+Date.now(),name,type,rate,ot,hrs,offday,sso,biweek,eomBonus});save();renderEmpList();
+  document.getElementById('new-name').value='';document.getElementById('new-rate').value='';document.getElementById('new-sso').checked=false;
+}
+function deleteEmp(id){if(!confirm('ลบพนักงานนี้?'))return;employees=employees.filter(e=>e.id!==id);save();renderEmpList();}
+function openEditForm(id){editingEmpId=id;renderEmpList();}
+function cancelEdit(){editingEmpId=null;renderEmpList();}
+function saveEdit(id){
+  const emp=employees.find(e=>e.id===id);if(!emp)return;
+  const name=document.getElementById('ef-name-'+id).value.trim();const type=document.getElementById('ef-type-'+id).value;const rate=+document.getElementById('ef-rate-'+id).value;const ot=+document.getElementById('ef-ot-'+id).value||80;const hrs=+document.getElementById('ef-hrs-'+id).value||8;
+  const offday=[...document.querySelectorAll('.ef-offday-chk-'+id+':checked')].map(c=>+c.value);
+  const sso=document.getElementById('ef-sso-'+id).checked;
+  const biweek=type==='salary'&&document.getElementById('ef-biweek-'+id).checked;const eomBonus=biweek&&document.getElementById('ef-eombonus-'+id).checked?+document.getElementById('ef-eomamt-'+id).value||0:0;
+  const otFlat=+document.getElementById('ef-otflat-'+id).value||0;
+  const otFlatHrs=+document.getElementById('ef-otflatHrs-'+id).value||0;
+  if(!name||!rate){alert('กรุณากรอกชื่อและค่าจ้าง');return;}
+  Object.assign(emp,{name,type,rate,ot,hrs,offday,sso,biweek,eomBonus,otFlat,otFlatHrs});editingEmpId=null;save();renderEmpList();
+}
+function renderEmpList(){
+  const div=document.getElementById('emp-list');if(!employees.length){div.innerHTML='<div style="color:#aaa;font-size:13px;padding:1rem">ยังไม่มีพนักงาน</div>';return;}
+  let h='';
+  employees.forEach(emp=>{
+    h+=`<div><div class="emp-row">
+      <div class="avatar">${emp.name.slice(0,2)}</div>
+      <div style="flex:1">
+        <div style="font-size:13px;font-weight:600;color:#1a1a1a">${emp.name} <span class="badge ${emp.type==='salary'?'badge-salary':'badge-daily'}">${emp.type==='salary'?'เงินเดือน':'รายวัน'}</span>${emp.sso?' <span class="badge badge-sso">ปกส.5%</span>':''}${emp.biweek?' <span class="badge badge-biweek">จ่าย2สัปดาห์</span>':''}${emp.eomBonus?' <span class="badge badge-eom">+สิ้นเดือน ฿'+emp.eomBonus+'</span>':''}</div>
+        <div style="font-size:11px;color:#888">${emp.type==='salary'?'เดือน ฿'+emp.rate.toLocaleString():'฿'+emp.rate+'/วัน'} · OT ฿${emp.ot}/ชม. · ปกติ ${emp.hrs}ชม./วัน${(()=>{const offs=Array.isArray(emp.offday)?emp.offday:[emp.offday];const names={0:'อา.',1:'จ.',2:'อ.',3:'พ.',4:'พฤ.',5:'ศ.',6:'ส.'};return offs.length?` · หยุด ${offs.map(d=>names[d]).join(',')}`:''})()}</div>
+        ${(()=>{const wt=WORK_TIME_CONFIG[emp.id];if(!wt)return '';const fmtT=m=>`${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`;return `<div style="font-size:11px;margin-top:3px"><span style="background:#e8f0fe;color:#1565c0;border:1px solid #bbdefb;border-radius:6px;padding:1px 8px;font-size:11px">🕐 เวลางาน ${fmtT(wt.start)}–${fmtT(wt.end)} (ต่างจากปกติ)</span></div>`;})()}
+        ${(()=>{const dayNames=['จ.','อ.','พ.','พฤ.','ศ.','ส.','อา.'];const days=NO_LUNCH_CONFIG[emp.id];return days&&days.length?`<div style="font-size:11px;margin-top:3px"><span style="background:#fff3e0;color:#e65100;border:1px solid #ffcc80;border-radius:6px;padding:1px 8px;font-size:11px">🍱 ไม่พักเที่ยงวัน${days.map(d=>dayNames[d]).join(', ')} → ZKTime บวกคืน 1 ชม.</span></div>`:'';})()}
+        ${(()=>{if(emp.type!=='salary')return '';const q=calcLeaveQuota(emp,currentWeekStart);if(!q)return '';const pct=Math.min(100,q.usedHrs/q.quotaHrs*100);const barColor=q.overHrs>0?'#c62828':(pct>75?'#f57c00':'#2e7d32');return `<div onclick="showQuotaDetail('${emp.id}')" style="font-size:11px;margin-top:5px;background:#f8f9fa;border-radius:8px;padding:6px 10px;border:1px solid #e5e5e5;cursor:pointer" title="กดดูรายละเอียด">
+          <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span style="color:#555;font-weight:600">📅 โควต้าลา/ขาด ปี ${currentWeekStart.getFullYear()+543} <i class="ti ti-external-link" style="font-size:10px"></i></span><span style="color:${barColor};font-weight:600">${q.usedHrs}/${q.quotaHrs} ชม.</span></div>
+          <div style="height:6px;background:#e0e0e0;border-radius:3px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${barColor}"></div></div>
+          <div style="margin-top:3px;color:#888">${q.overHrs>0?`<span style="color:#c62828;font-weight:600">⚠️ เกินโควต้า ${q.overHrs} ชม. → หักเงินตามจริง</span>`:`เหลือ ${q.remainHrs} ชม. (${(q.remainHrs/8).toFixed(1)} วัน)`}</div>
+        </div>`;})()}
+      </div>
+      <div style="display:flex;gap:4px">
+        <button class="btn-info" style="padding:5px 10px;font-size:12px" onclick="openEditForm('${emp.id}')"><i class="ti ti-pencil" style="font-size:13px;vertical-align:-2px"></i></button>
+        <button class="btn-danger" onclick="deleteEmp('${emp.id}')"><i class="ti ti-trash" style="font-size:13px;vertical-align:-2px"></i></button>
+      </div>
+    </div>`;
+    if(editingEmpId===emp.id){
+      h+=`<div class="edit-form">
+        <div class="grid2" style="margin-bottom:8px">
+          <div class="field"><label>ชื่อ</label><input id="ef-name-${emp.id}" type="text" value="${emp.name}"></div>
+          <div class="field"><label>ประเภท</label><select id="ef-type-${emp.id}" onchange="toggleEditSalaryOpts('${emp.id}')"><option value="daily" ${emp.type==='daily'?'selected':''}>รายวัน</option><option value="salary" ${emp.type==='salary'?'selected':''}>เงินเดือน</option></select></div>
+        </div>
+        <div class="grid2" style="margin-bottom:8px">
+          <div class="field"><label>ค่าจ้าง/วัน หรือ เงินเดือน/เดือน (บาท)</label><input id="ef-rate-${emp.id}" type="number" value="${emp.rate}" style="text-align:left;padding:5px 8px;width:100%"></div>
+          <div class="field"><label>ค่า OT/ชม. (บาท)</label><input id="ef-ot-${emp.id}" type="number" value="${emp.ot}" style="text-align:left;padding:5px 8px;width:100%"></div>
+        </div>
+        <div style="margin-bottom:8px;background:#fff8e1;border-radius:6px;padding:8px 10px;border:1px solid #ffe082">
+          <label style="font-size:11px;font-weight:600;color:#f57f17;display:block;margin-bottom:6px">OT เหมาต่อวัน (ถ้ามี)</label>
+          <div style="display:flex;gap:8px">
+            <div class="field" style="flex:1"><label>ชม.ขั้นต่ำ (ครบแล้วได้เหมา)</label><input id="ef-otflatHrs-${emp.id}" type="number" value="${emp.otFlatHrs||''}" placeholder="เช่น 4" style="padding:4px 6px;width:100%"></div>
+            <div class="field" style="flex:1"><label>ค่า OT เหมา (บาท/วัน)</label><input id="ef-otflat-${emp.id}" type="number" value="${emp.otFlat||''}" placeholder="เช่น 400" style="padding:4px 6px;width:100%"></div>
+          </div>
+          <div style="font-size:10px;color:#888;margin-top:4px">ถ้าไม่ครบชั่วโมงขั้นต่ำ จะใช้อัตรา ฿${emp.ot}/ชม. แทน</div>
+        </div>
+        <div class="grid2" style="margin-bottom:8px">
+          <div class="field"><label>ชั่วโมง/วัน (ปกติ)</label><input id="ef-hrs-${emp.id}" type="number" value="${emp.hrs}" style="text-align:left;padding:5px 8px;width:100%"></div>
+          <div class="field"><label>วันหยุดประจำ (เลือกได้หลายวัน)</label>
+            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">
+              ${[['จ.',1],['อ.',2],['พ.',3],['พฤ.',4],['ศ.',5],['ส.',6],['อา.',0]].map(([label,val])=>`<label style="display:flex;align-items:center;gap:3px;font-size:12px;cursor:pointer"><input type="checkbox" value="${val}" class="ef-offday-chk-${emp.id}" ${(Array.isArray(emp.offday)?emp.offday:[emp.offday]).includes(val)?'checked':''} style="accent-color:#1a73e8">${label}</label>`).join('')}
+            </div>
+          </div>
+        </div>
+        <div id="ef-salary-opts-${emp.id}" style="${emp.type==='salary'?'':'display:none;'}margin-bottom:8px;background:#fff;border-radius:6px;padding:10px;border:1px solid #d1c4e9">
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;margin-bottom:6px"><input type="checkbox" id="ef-biweek-${emp.id}" ${emp.biweek?'checked':''} style="width:14px;height:14px;accent-color:#311b92"> จ่ายทุก 2 สัปดาห์</label>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:12px;margin-bottom:6px"><input type="checkbox" id="ef-eombonus-${emp.id}" ${emp.eomBonus?'checked':''} style="width:14px;height:14px;accent-color:#2e7d32"> บวกเพิ่มสิ้นเดือน</label>
+          <input id="ef-eomamt-${emp.id}" type="number" value="${emp.eomBonus||''}" placeholder="จำนวน (บาท)" style="max-width:140px;padding:4px 8px;text-align:left;width:100%">
+        </div>
+        <div style="margin-bottom:10px"><label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px"><input type="checkbox" id="ef-sso-${emp.id}" ${emp.sso?'checked':''} style="width:15px;height:15px;accent-color:#e65100"> หักประกันสังคม 5%</label></div>
+        <div style="display:flex;gap:8px">
+          <button class="edit-save-btn" onclick="saveEdit('${emp.id}')"><i class="ti ti-check" style="font-size:13px;vertical-align:-2px;margin-right:3px"></i>บันทึก</button>
+          <button class="edit-cancel-btn" onclick="cancelEdit()">ยกเลิก</button>
+        </div>
+      </div>`;
+    }
+    h+='</div>';
+  });
+  div.innerHTML=h;
+}
+function toggleEditSalaryOpts(id){document.getElementById('ef-salary-opts-'+id).style.display=document.getElementById('ef-type-'+id).value==='salary'?'block':'none';}
+let currentMonth=new Date().getMonth();
+let currentMonthYear=new Date().getFullYear();
+
+function changeMonth(dir){
+  currentMonth+=dir;
+  if(currentMonth>11){currentMonth=0;currentMonthYear++;}
+  if(currentMonth<0){currentMonth=11;currentMonthYear--;}
+  renderMonthly();
+}
+
+function renderMonthly(opts){
+  opts=opts||{};
+  const isWeekly=opts.weekly||false;
+  const thaiMonths=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const thaiYear=(currentMonthYear+543).toString().slice(-2);
+  const labelEl=document.getElementById(isWeekly?'weekly-label':'monthly-label');
+  if(labelEl&&!isWeekly)labelEl.textContent=`${thaiMonths[currentMonth]} ${thaiYear}  (สรุปรายเดือน)`;
+
+  const allKeys=Object.keys(weekData);
+  let monthKeys;
+  if(isWeekly){
+    // สัปดาห์รอบจ่ายปัจจุบัน (weekKey ของ currentWeekStart)
+    const wk=weekKey(currentWeekStart);
+    monthKeys=allKeys.filter(k=>{const d=parseWeekKey(k);return d&&weekKey(d)===wk;});
+    if(labelEl){
+      const sat=new Date(currentWeekStart);sat.setDate(sat.getDate()+5);
+      const fmt=d=>`${d.getDate()}/${d.getMonth()+1}/${(d.getFullYear()+543).toString().slice(-2)}`;
+      labelEl.textContent=`สัปดาห์จ่าย ${fmt(sat)} (สรุปรายสัปดาห์)`;
+    }
+  }else{
+    // แบบ A: รวมสัปดาห์ที่มีวันใดวันหนึ่งอยู่ในเดือนนี้ (นับรายวันจริง)
+    monthKeys=allKeys.filter(k=>{
+      const d=parseWeekKey(k);
+      if(!d)return false;
+      for(let i=0;i<7;i++){
+        const dt=new Date(d);dt.setDate(dt.getDate()+i);
+        if(dt.getMonth()===currentMonth&&dt.getFullYear()===currentMonthYear)return true;
+      }
+      return false;
+    }).sort();
+  }
+
+  const empMap={};
+  employees.forEach(emp=>{
+    empMap[emp.id]={emp,days:0,workHrs:0,baseGross:0,otHrs:0,otPay:0,sso:0,bonus:0,deduct:0,lateDeduct:0,earlyDeduct:0,eom:0,net:0,expectedDays:0,absentDays:0,weeks:[]};
+  });
+
+  monthKeys.forEach(key=>{
+    const monday=parseWeekKey(key);
+    const wd=weekData[key]||{};
+    // สร้าง mask: วันไหนในสัปดาห์นี้อยู่ในเดือนที่ดูอยู่ (เฉพาะ monthly mode)
+    const inMonth=[];
+    for(let i=0;i<7;i++){
+      if(isWeekly){inMonth.push(true);continue;}
+      const dt=new Date(monday);dt.setDate(dt.getDate()+i);
+      inMonth.push(dt.getMonth()===currentMonth&&dt.getFullYear()===currentMonthYear);
+    }
+    const daysInMonthCount=inMonth.filter(Boolean).length; // จำนวนวันของสัปดาห์นี้ที่อยู่ในเดือน
+    employees.forEach(emp=>{
+      const isSkip=emp.biweek&&!isPanPayWeek(monday);
+      const ed=wd[emp.id];
+      // นับเฉพาะวันที่อยู่ในเดือน
+      const presentArr=ed?ed.present.map((p,i)=>p&&inMonth[i]):[false,false,false,false,false,false,false];
+      const days=presentArr.filter(Boolean).length;
+      const workhrsFull=ed&&ed.workhrs?ed.workhrs.map(v=>+v||0):[0,0,0,0,0,0,0];
+      const workhrs=workhrsFull.map((h,i)=>inMonth[i]?h:0);
+      const otArrFull=ed?ed.ot.map(v=>+v||0):[0,0,0,0,0,0,0];
+      const otArr=otArrFull.map((o,i)=>inMonth[i]?o:0);
+      const otTotal=otArr.reduce((a,b)=>a+b,0);
+      const bonus=ed?ed.bonus||0:0;
+      const deduct=ed?ed.deduct||0:0;
+      const lateDeduct=ed?ed.lateDeduct||0:0;
+      const earlyDeduct=ed?ed.earlyDeduct||0:0;
+      const totalWorkHrs=workhrs.reduce((a,b)=>a+b,0);
+      const isPayWeek=!emp.biweek||isPanPayWeek(monday);
+      let base,sso,eom;
+      if(emp.type==='salary'){
+        // salary: base คิดตามสัดส่วนวันที่อยู่ในเดือน (จาก base เต็มสัปดาห์)
+        const daysFull=ed?ed.present.filter(Boolean).length:0;
+        const baseFull=isPayWeek?calcBaseFromHrs(emp,workhrsFull,daysFull,monday):0;
+        const ratio=isWeekly?1:(daysFull>0?days/daysFull:daysInMonthCount/7);
+        base=Math.round(baseFull*ratio);
+        sso=isPayWeek?calcSSO(emp,base):0;
+        // eom + bonus/deduct ผูกกับสัปดาห์ที่วันเสาร์อยู่ในเดือน
+        const sat=new Date(monday);sat.setDate(sat.getDate()+5);
+        const satInMonth=isWeekly||(sat.getMonth()===currentMonth&&sat.getFullYear()===currentMonthYear);
+        eom=(isPayWeek&&satInMonth)?calcEOMBonus(emp,monday):0;
+      }else{
+        base=calcBaseFromHrs(emp,workhrs,days,monday); // daily: คิดตามชั่วโมงรายวันที่อยู่ในเดือน
+        sso=isPayWeek?calcSSO(emp,base):0;
+        eom=isPayWeek?calcEOMBonus(emp,monday):0;
+      }
+      const otPay=calcOTPay(emp,otArr);
+      // bonus/deduct ผูกกับสัปดาห์ที่วันเสาร์ (วันจ่าย) อยู่ในเดือน
+      const sat=new Date(monday);sat.setDate(sat.getDate()+5);
+      const payInMonth=isWeekly||(sat.getMonth()===currentMonth&&sat.getFullYear()===currentMonthYear);
+      const bonusEff=payInMonth?bonus:0;
+      const deductEff=payInMonth?deduct:0;
+      const lateDeductEff=payInMonth?lateDeduct:0;
+      const earlyDeductEff=payInMonth?earlyDeduct:0;
+      const net=Math.round(base+otPay+bonusEff-deductEff-lateDeductEff-earlyDeductEff-sso+eom);
+      const m=empMap[emp.id];
+      // นับ expected + absent เฉพาะวันทำงาน (ไม่รวมวันหยุดประจำ) ถึงวันที่ import แล้ว + เลย 17:00 + อยู่ในเดือน
+      let lastDataDay=-1;
+      if(ed&&ed.workhrs){
+        for(let i=0;i<7;i++){
+          if((ed.workhrs[i]||0)>0||(ed.present&&ed.present[i]))lastDataDay=i;
+        }
+      }
+      let expected=0;
+      let absentThisWeek=0;
+      if(lastDataDay>=0){
+        const now=new Date();
+        const WORK_END_HOUR=17;
+        const offs=Array.isArray(emp.offday)?emp.offday:[emp.offday];
+        for(let i=0;i<=lastDataDay;i++){
+          if(!inMonth[i])continue; // เฉพาะวันที่อยู่ในเดือน
+          const dt=new Date(monday);dt.setDate(dt.getDate()+i);
+          const dow=dt.getDay();
+          if(offs.includes(dow))continue; // วันหยุดประจำ → ไม่นับทั้ง expected และ absent
+          const dayEnd=new Date(dt);dayEnd.setHours(WORK_END_HOUR,0,0,0);
+          if(now<dayEnd)continue; // ยังไม่จบเวลางาน → ยังไม่ตัดสิน
+          expected++;
+          // ขาดงาน = วันทำงานที่ไม่ได้มา (present=false)
+          const cameToWork=ed.present&&ed.present[i];
+          if(!cameToWork)absentThisWeek++;
+        }
+      }
+      m.expectedDays+=expected;
+      m.absentDays=(m.absentDays||0)+absentThisWeek;
+      m.days+=days;m.workHrs+=totalWorkHrs;m.baseGross+=base;
+      m.otHrs+=otTotal;m.otPay+=otPay;m.sso+=sso;
+      m.bonus+=bonusEff;m.deduct+=deductEff;m.lateDeduct+=lateDeductEff;m.earlyDeduct=(m.earlyDeduct||0)+earlyDeductEff;m.eom+=eom;m.net+=net;
+      if(days>0||otTotal>0||bonusEff>0){
+        m.weeks.push({sat:`${sat.getDate()}/${sat.getMonth()+1}`,days,totalWorkHrs,otTotal,otPay,base,sso,eom,bonus:bonusEff,deduct:deductEff,net,isSkip,isPayWeek,expected,absent:absentThisWeek});
+      }
+    });
+  });
+
+  let totalGross=0,totalSSOAll=0,totalOTPay=0,totalNet=0;
+  let tableHTML='';
+
+  if(monthKeys.length===0){
+    tableHTML='<div style="text-align:center;color:#aaa;padding:2rem;font-size:13px">ยังไม่มีข้อมูลในเดือนนี้<br>กรอกข้อมูลในแท็บ "ตารางงาน" ก่อนครับ</div>';
+  } else {
+    employees.forEach(emp=>{
+      const m=empMap[emp.id];
+      if(m.days===0&&m.otHrs===0&&m.bonus===0)return;
+      totalGross+=m.baseGross;totalSSOAll+=m.sso;totalOTPay+=m.otPay;totalNet+=m.net;
+      const grossBeforeSSO=m.baseGross+m.otPay+m.bonus-m.deduct+m.eom;
+      const absentTotal=m.absentDays||0;
+      tableHTML+=`<div style="margin-bottom:1rem;border:1px solid #f0f0f0;border-radius:10px;overflow:hidden">
+        <div style="background:#fafafa;padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #f0f0f0">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div style="width:34px;height:34px;border-radius:50%;background:#e3f2fd;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#0d47a1;flex-shrink:0">${emp.name.slice(0,2)}</div>
+            <div>
+              <span style="font-size:14px;font-weight:700;color:#1a1a1a">${emp.name}</span>
+              <span style="font-size:11px;color:#aaa;margin-left:6px">${m.days} วัน · ${m.workHrs.toFixed(1)} ชม. รวม</span>
+              ${absentTotal>0?`<span style="font-size:11px;background:#ffebee;color:#c62828;border-radius:6px;padding:1px 7px;margin-left:6px;font-weight:600">ลา ${absentTotal} วัน</span>`:'<span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:6px;padding:1px 7px;margin-left:6px">มาครบ</span>'}
+              ${(()=>{if(emp.type!=='salary')return '';const q=calcLeaveQuota(emp,currentWeekStart);if(!q)return '';const c=q.overHrs>0?'#c62828':'#1565c0';return `<span onclick="event.stopPropagation();showQuotaDetail('${emp.id}')" style="font-size:11px;background:#e8f0fe;color:${c};border-radius:6px;padding:1px 7px;margin-left:6px;font-weight:600;cursor:pointer" title="กดดูรายละเอียดโควต้า">📅 โควต้า ${q.usedHrs}/${q.quotaHrs} ชม.</span>`;})()}
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:11px;color:#aaa">รับจริง</div>
+            <div style="font-size:16px;font-weight:700;color:#2e7d32">฿${Math.round(m.net).toLocaleString()}</div>
+          </div>
+        </div>
+        <div style="padding:10px 14px">
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:10px">
+            <div style="background:#f9f9f9;border-radius:8px;padding:8px 10px">
+              <div style="font-size:11px;color:#888">ค่าแรง (ก่อนหักปกส.)</div>
+              <div style="font-size:14px;font-weight:600;color:#1a1a1a">฿${Math.round(m.baseGross).toLocaleString()}</div>
+            </div>
+            <div style="background:#fff3e0;border-radius:8px;padding:8px 10px">
+              <div style="font-size:11px;color:#e65100">OT ${m.otHrs.toFixed(1)} ชม.</div>
+              <div style="font-size:14px;font-weight:600;color:#e65100">฿${Math.round(m.otPay).toLocaleString()}</div>
+            </div>
+            <div style="background:#ffebee;border-radius:8px;padding:8px 10px">
+              <div style="font-size:11px;color:#c62828">หักปกส.</div>
+              <div style="font-size:14px;font-weight:600;color:#c62828">-฿${Math.round(m.sso).toLocaleString()}</div>
+            </div>
+            <div style="background:#e8f5e9;border-radius:8px;padding:8px 10px">
+              <div style="font-size:11px;color:#2e7d32">รวมก่อนหักปกส.</div>
+              <div style="font-size:14px;font-weight:600;color:#2e7d32">฿${Math.round(grossBeforeSSO).toLocaleString()}</div>
+            </div>
+            <div style="background:${absentTotal>0?'#ffebee':'#f9f9f9'};border-radius:8px;padding:8px 10px">
+              <div style="font-size:11px;color:${absentTotal>0?'#c62828':'#888'}">ลาหยุด</div>
+              <div style="font-size:14px;font-weight:600;color:${absentTotal>0?'#c62828':'#888'}">${absentTotal} วัน</div>
+            </div>
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead><tr style="background:#fafafa">
+              <th style="text-align:left;padding:5px 8px;color:#888;font-weight:500;border-bottom:1px solid #eee">จ่ายวันเสาร์ที่</th>
+              <th style="text-align:center;padding:5px 4px;color:#888;font-weight:500;border-bottom:1px solid #eee">มา/ควรมา</th>
+              <th style="text-align:center;padding:5px 4px;color:#888;font-weight:500;border-bottom:1px solid #eee">ลา</th>
+              <th style="text-align:right;padding:5px 8px;color:#888;font-weight:500;border-bottom:1px solid #eee">ค่าแรง</th>
+              <th style="text-align:right;padding:5px 8px;color:#888;font-weight:500;border-bottom:1px solid #eee">OT</th>
+              <th style="text-align:right;padding:5px 8px;color:#888;font-weight:500;border-bottom:1px solid #eee">บวก/ลบ</th>
+              <th style="text-align:right;padding:5px 8px;color:#888;font-weight:500;border-bottom:1px solid #eee">ปกส.</th>
+              <th style="text-align:right;padding:5px 8px;color:#888;font-weight:500;border-bottom:1px solid #eee">รับจริง</th>
+            </tr></thead><tbody>`;
+      m.weeks.forEach(w=>{
+        const misc=w.bonus-w.deduct+w.eom;
+        tableHTML+=`<tr style="${!w.isPayWeek&&w.base===0?'opacity:.5':''}">
+          <td style="padding:5px 8px;color:#555">${w.sat}${!w.isPayWeek?'<span style="font-size:10px;color:#f57f17;margin-left:4px">(OT เท่านั้น)</span>':w.eom>0?'<span style="font-size:10px;color:#2e7d32;margin-left:4px">+สิ้นเดือน</span>':''}</td>
+          <td style="text-align:center;padding:5px 4px;color:#555">${w.days}/${w.expected}<br><span style="font-size:10px;color:#aaa">${w.totalWorkHrs.toFixed(1)}ชม.</span></td>
+          <td style="text-align:center;padding:5px 4px;font-weight:600;color:${w.absent>0?'#c62828':'#aaa'}">${w.absent>0?w.absent+' วัน':'-'}</td>
+          <td style="text-align:right;padding:5px 8px;color:#1a1a1a">฿${Math.round(w.base).toLocaleString()}</td>
+          <td style="text-align:right;padding:5px 8px;color:${w.otPay>0?'#e65100':'#aaa'}">${w.otPay>0?'฿'+Math.round(w.otPay).toLocaleString():'-'}</td>
+          <td style="text-align:right;padding:5px 8px;color:${misc>0?'#2e7d32':misc<0?'#c62828':'#aaa'}">${misc!==0?(misc>0?'+':'')+' ฿'+Math.round(Math.abs(misc)).toLocaleString():'-'}</td>
+          <td style="text-align:right;padding:5px 8px;color:${w.sso>0?'#c62828':'#aaa'}">${w.sso>0?'-฿'+Math.round(w.sso).toLocaleString():'-'}</td>
+          <td style="text-align:right;padding:5px 8px;font-weight:600;color:#2e7d32">฿${Math.round(w.net).toLocaleString()}</td>
+        </tr>`;
+      });
+      tableHTML+=`<tr style="background:#f5f5f5;font-weight:600">
+        <td style="padding:6px 8px;color:#1a1a1a">รวมทั้งเดือน</td>
+        <td style="text-align:center;padding:6px 4px;color:#1a1a1a">${m.days}/${m.expectedDays} วัน</td>
+        <td style="text-align:center;padding:6px 4px;color:${absentTotal>0?'#c62828':'#2e7d32'}">${absentTotal>0?absentTotal+' วัน':'ครบ'}</td>
+        <td style="text-align:right;padding:6px 8px;color:#1a1a1a">฿${Math.round(m.baseGross).toLocaleString()}</td>
+        <td style="text-align:right;padding:6px 8px;color:#e65100">฿${Math.round(m.otPay).toLocaleString()}</td>
+        <td style="text-align:right;padding:6px 8px;color:${(m.bonus-m.deduct+m.eom)>=0?'#2e7d32':'#c62828'}">${m.bonus-m.deduct+m.eom!==0?(m.bonus-m.deduct+m.eom>0?'+':'')+' ฿'+Math.round(Math.abs(m.bonus-m.deduct+m.eom)).toLocaleString():'-'}</td>
+        <td style="text-align:right;padding:6px 8px;color:#c62828">${m.sso>0?'-฿'+Math.round(m.sso).toLocaleString():'-'}</td>
+        <td style="text-align:right;padding:6px 8px;color:#2e7d32">฿${Math.round(m.net).toLocaleString()}</td>
+      </tr></tbody></table>
+        </div>
+      </div>`;
+    });
+  }
+
+  const pfx=isWeekly?'wk':'mn';
+  const gEl=document.getElementById(pfx+'-gross');if(gEl)gEl.textContent='฿'+Math.round(totalGross).toLocaleString();
+  const sEl=document.getElementById(pfx+'-sso');if(sEl)sEl.textContent='-฿'+Math.round(totalSSOAll).toLocaleString();
+  const oEl=document.getElementById(pfx+'-ot');if(oEl)oEl.textContent='฿'+Math.round(totalOTPay).toLocaleString();
+  const nEl=document.getElementById(pfx+'-net');if(nEl)nEl.textContent='฿'+Math.round(totalNet).toLocaleString();
+  document.getElementById(isWeekly?'weekly-table-wrap':'monthly-table-wrap').innerHTML=tableHTML;
+}
+
+function renderWeekly(){renderMonthly({weekly:true});}
+
+
+// ===== PERMIT =====
+const PERMIT_EMPS = ['วิน','กาก่า','วาวาย','ลุย'];
+
+function getPermitEmp(name) {
+  const emp = employees.find(e => e.name === name);
+  return emp ? emp.id : null;
+}
+
+function renderPermit() {
+  PERMIT_EMPS.forEach(name => {
+    const id = getPermitEmp(name);
+    if (id && !permitData[id]) permitData[id] = { name, total: 0, paid: 0, deductions: [] };
+  });
+  const listDiv = document.getElementById('permit-list');
+  const histDiv = document.getElementById('permit-history');
+  if (!listDiv) return;
+  let html = '';
+  const empIds = PERMIT_EMPS.map(n => getPermitEmp(n)).filter(Boolean);
+  empIds.forEach(id => {
+    const p = permitData[id];
+    if (!p) return;
+    const remaining = (p.total||0) - (p.paid||0);
+    const pct = p.total > 0 ? Math.min(100, Math.round((p.paid/p.total)*100)) : 0;
+    const barColor = pct>=100?'#2e7d32':pct>=50?'#1a73e8':'#e65100';
+    html += `<div style="border:1px solid #e5e5e5;border-radius:10px;padding:14px 16px;margin-bottom:12px;background:${pct>=100?'#f1f8e9':'#fff'}">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <div class="avatar" style="background:#ede7f6;color:#7b1fa2">${p.name.slice(0,2)}</div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700;color:#1a1a1a">${p.name}${pct>=100?'<span style="font-size:11px;background:#e8f5e9;color:#2e7d32;border-radius:6px;padding:1px 8px;margin-left:6px">ชำระครบแล้ว ✓</span>':''}</div>
+          <div style="font-size:12px;color:#888;margin-top:2px">จ่ายแล้ว <b style="color:#1a73e8">฿${(p.paid||0).toLocaleString()}</b> จากทั้งหมด <b>฿${(p.total||0).toLocaleString()}</b>${remaining>0?` · คงเหลือ <b style="color:#e65100">฿${remaining.toLocaleString()}</b>`:''}</div>
+        </div>
+        <button onclick="editPermitTotal('${id}')" style="padding:5px 10px;font-size:12px;border:1px solid #ddd;border-radius:6px;background:#fff;cursor:pointer;color:#555;font-family:'Sarabun',sans-serif"><i class="ti ti-pencil" style="font-size:12px;vertical-align:-1px"></i> แก้ยอด</button>
+      </div>
+      <div style="width:100%;height:8px;background:#f0f0f0;border-radius:99px;overflow:hidden;margin-bottom:10px">
+        <div style="height:100%;width:${pct}%;background:${barColor};border-radius:99px;transition:width 0.4s"></div>
+      </div>
+      <div id="permit-deduct-form-${id}" style="display:none;background:#f0f7ff;border:1px solid #90caf9;border-radius:8px;padding:10px;margin-bottom:10px">
+        <div style="font-size:12px;font-weight:600;margin-bottom:8px">บันทึกการตัดเงิน</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+          <div><div style="font-size:11px;color:#666;margin-bottom:3px">สัปดาห์</div><input id="pd-week-${id}" type="text" value="${weekDateRange(currentWeekStart)}" style="font-size:12px;padding:5px 8px;border:1px solid #ddd;border-radius:6px;width:160px;font-family:'Sarabun',sans-serif"></div>
+          <div><div style="font-size:11px;color:#666;margin-bottom:3px">จำนวนเงิน (บาท)</div><input id="pd-amt-${id}" type="number" placeholder="เช่น 500" style="font-size:12px;padding:5px 8px;border:1px solid #ddd;border-radius:6px;width:120px;font-family:'Sarabun',sans-serif"></div>
+          <div><div style="font-size:11px;color:#666;margin-bottom:3px">หมายเหตุ</div><input id="pd-note-${id}" type="text" placeholder="(ไม่บังคับ)" style="font-size:12px;padding:5px 8px;border:1px solid #ddd;border-radius:6px;width:140px;font-family:'Sarabun',sans-serif"></div>
+          <button onclick="savePermitDeduction('${id}')" style="padding:6px 14px;background:#1a73e8;color:#fff;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Sarabun',sans-serif">บันทึก</button>
+          <button onclick="document.getElementById('permit-deduct-form-${id}').style.display='none'" style="padding:6px 10px;background:#fff;color:#555;border:1px solid #ddd;border-radius:6px;font-size:12px;cursor:pointer;font-family:'Sarabun',sans-serif">ยกเลิก</button>
+        </div>
+      </div>
+      ${pct<100?`<button onclick="document.getElementById('permit-deduct-form-${id}').style.display='block'" style="padding:6px 14px;background:#e8f5e9;color:#2e7d32;border:1px solid #a5d6a7;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Sarabun',sans-serif"><i class="ti ti-plus" style="font-size:12px;vertical-align:-1px;margin-right:3px"></i>บันทึกการตัดเงิน</button>`:''}
+    </div>`;
+  });
+  listDiv.innerHTML = html || '<div style="color:#aaa;font-size:13px;padding:1rem">ไม่พบพนักงาน</div>';
+  let hhtml = '';
+  empIds.forEach(id => {
+    const p = permitData[id];
+    if (!p||!p.deductions||p.deductions.length===0) return;
+    hhtml += `<div style="margin-bottom:1rem"><div style="font-size:13px;font-weight:600;margin-bottom:6px">${p.name}</div>
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead><tr style="background:#fafafa"><th style="text-align:left;padding:5px 8px;color:#888;font-weight:500;border-bottom:1px solid #eee">สัปดาห์</th><th style="text-align:right;padding:5px 8px;color:#888;font-weight:500;border-bottom:1px solid #eee">จำนวน</th><th style="text-align:left;padding:5px 8px;color:#888;font-weight:500;border-bottom:1px solid #eee">หมายเหตุ</th><th style="border-bottom:1px solid #eee"></th></tr></thead><tbody>`;
+    p.deductions.forEach((d,i) => {
+      hhtml += `<tr><td style="padding:5px 8px;color:#555">${d.week}</td><td style="text-align:right;padding:5px 8px;font-weight:600;color:#1a73e8">฿${(d.amount||0).toLocaleString()}</td><td style="padding:5px 8px;color:#888">${d.note||'-'}</td>
+        <td style="padding:5px 4px;text-align:center">
+          <button onclick="editPermitDeduction('${id}',${i})" style="font-size:11px;padding:2px 7px;border:1px solid #ddd;border-radius:4px;background:#fff;cursor:pointer;font-family:'Sarabun',sans-serif">แก้ไข</button>
+          <button onclick="deletePermitDeduction('${id}',${i})" style="font-size:11px;padding:2px 7px;border:1px solid #ffcdd2;border-radius:4px;background:#fff;cursor:pointer;color:#c62828;font-family:'Sarabun',sans-serif;margin-left:3px">ลบ</button>
+        </td></tr>`;
+    });
+    const t = p.deductions.reduce((s,d)=>s+(d.amount||0),0);
+    hhtml += `<tr style="background:#f5f5f5;font-weight:600"><td style="padding:5px 8px">รวม</td><td style="text-align:right;padding:5px 8px;color:#1a73e8">฿${t.toLocaleString()}</td><td colspan="2"></td></tr></tbody></table></div>`;
+  });
+  histDiv.innerHTML = hhtml || '<div style="color:#aaa;font-size:13px;padding:1rem">ยังไม่มีประวัติ</div>';
+}
+
+function editPermitTotal(id) {
+  const p = permitData[id]; if (!p) return;
+  const v = prompt(`ยอดใบอนุญาตทั้งหมดของ ${p.name} (บาท):`, p.total||'');
+  if (v===null) return;
+  const n = parseFloat(v);
+  if (isNaN(n)||n<0) { alert('กรุณากรอกตัวเลขที่ถูกต้อง'); return; }
+  permitData[id].total = n; save(); renderPermit();
+}
+
+function savePermitDeduction(id) {
+  const amt = parseFloat(document.getElementById('pd-amt-'+id).value);
+  if (!amt||amt<=0) { alert('กรุณากรอกจำนวนเงิน'); return; }
+  if (!permitData[id]) return;
+  if (!permitData[id].deductions) permitData[id].deductions = [];
+  permitData[id].deductions.push({ week: document.getElementById('pd-week-'+id).value, amount: amt, note: document.getElementById('pd-note-'+id).value||'' });
+  permitData[id].paid = permitData[id].deductions.reduce((s,d)=>s+(d.amount||0),0);
+  save(); renderPermit();
+}
+
+function editPermitDeduction(id, idx) {
+  const d = permitData[id].deductions[idx]; if (!d) return;
+  const a = prompt('แก้ไขจำนวนเงิน (บาท):', d.amount);
+  if (a===null) return;
+  const v = parseFloat(a); if (isNaN(v)||v<0) { alert('กรุณากรอกตัวเลขที่ถูกต้อง'); return; }
+  const n = prompt('แก้ไขหมายเหตุ:', d.note||''); if (n===null) return;
+  permitData[id].deductions[idx].amount = v;
+  permitData[id].deductions[idx].note = n;
+  permitData[id].paid = permitData[id].deductions.reduce((s,d)=>s+(d.amount||0),0);
+  save(); renderPermit();
+}
+
+function deletePermitDeduction(id, idx) {
+  if (!confirm('ลบรายการนี้?')) return;
+  permitData[id].deductions.splice(idx,1);
+  permitData[id].paid = permitData[id].deductions.reduce((s,d)=>s+(d.amount||0),0);
+  save(); renderPermit();
+}
+
+function showTab(t){
+  ['schedule','summary','weekly','monthly','settings','permit','quota','auditlog'].forEach((x,i)=>{
+    const el=document.getElementById('tab-'+x);if(el)el.style.display=x===t?'':'none';
+    const btn=document.querySelectorAll('.tab')[i];if(btn)btn.classList.toggle('active',x===t);
+  });
+  if(t==='schedule')renderSchedule();
+  if(t==='summary'){sumWeekStart=new Date(currentWeekStart);renderSummary();}
+  if(t==='weekly')renderWeekly();
+  if(t==='monthly')renderMonthly();
+  if(t==='settings')renderEmpList();
+  if(t==='permit')renderPermit();
+  if(t==='quota')renderQuotaTab();
+  if(t==='auditlog')renderLog();
+}
+employees=employees.map(e=>({...e,offday:Array.isArray(e.offday)?e.offday:(e.offday===-1?[]:[e.offday])}));
+logAction('load_app',`เปิดแอป | ${navigator.userAgent.substring(0,60)}`);
+loadFromSheets();
+</script>
+
+<div class="modal-backdrop" id="save-log-modal">
+  <div class="modal-box" style="max-width:460px;width:95%">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:4px">
+      <div style="width:38px;height:38px;border-radius:50%;background:#e8f5e9;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <i class="ti ti-circle-check" style="font-size:22px;color:#2e7d32"></i>
+      </div>
+      <div>
+        <div style="font-size:15px;font-weight:700;color:#1a1a1a">บันทึกสำเร็จ</div>
+        <div style="font-size:11px;color:#aaa" id="save-log-time"></div>
+      </div>
+    </div>
+    <div style="font-size:12px;font-weight:600;color:#1a73e8;background:#e8f0fe;border-radius:8px;padding:6px 12px;margin:10px 0" id="save-log-week"></div>
+    <div class="log-modal-body" id="save-log-rows"></div>
+    <div class="log-footer">
+      <div>
+        <div style="font-size:11px;color:#aaa">รวมที่เลือก <span id="save-log-count"></span></div>
+        <div id="save-log-total" style="font-size:18px;font-weight:700;color:#2e7d32">฿0</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="copyLogText()" style="padding:9px 14px;background:#f5f5f5;color:#555;border:1px solid #ddd;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Sarabun',sans-serif">
+          <i class="ti ti-copy" style="font-size:14px;vertical-align:-2px;margin-right:3px"></i>คัดลอก
+        </button>
+        <button id="modal-close-btn" onclick="if(!isSyncing)document.getElementById('save-log-modal').classList.remove('show')" style="padding:9px 20px;background:#1a73e8;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Sarabun',sans-serif">ปิด</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="selected-summary-modal">
+  <div class="modal-box" style="max-width:420px;width:95%">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+      <div style="width:38px;height:38px;border-radius:50%;background:#e8f0fe;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+        <i class="ti ti-calculator" style="font-size:20px;color:#1a73e8"></i>
+      </div>
+      <div>
+        <div style="font-size:15px;font-weight:700;color:#1a1a1a">รวมยอดที่เลือก</div>
+        <div style="font-size:11px;color:#aaa" id="selected-summary-week"></div>
+      </div>
+    </div>
+    <div id="selected-summary-rows" style="max-height:340px;overflow-y:auto;margin-bottom:12px"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-top:2px solid #1a73e8;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:600;color:#555">รวมทั้งหมด <span id="selected-summary-count"></span></div>
+      <div style="font-size:20px;font-weight:700;color:#2e7d32" id="selected-summary-total">฿0</div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end">
+      <button onclick="copySelectedSummary()" style="padding:9px 14px;background:#f5f5f5;color:#555;border:1px solid #ddd;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Sarabun',sans-serif">
+        <i class="ti ti-copy" style="font-size:13px;vertical-align:-2px;margin-right:3px"></i>คัดลอก
+      </button>
+      <button onclick="document.getElementById('selected-summary-modal').classList.remove('show')" style="padding:9px 20px;background:#1a73e8;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Sarabun',sans-serif">ปิด</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="clear-modal">
+  <div class="modal-box">
+    <div class="modal-icon"><i class="ti ti-alert-triangle" style="font-size:26px;color:#e65100"></i></div>
+    <div class="modal-title">ล้างข้อมูลสัปดาห์นี้?</div>
+    <div class="modal-week-label" id="modal-week-text"></div>
+    <div class="modal-desc">ข้อมูลที่จะถูกล้าง:</div>
+    <ul class="modal-list">
+      <li>การเช็คชื่อมาทำงานทุกวัน</li>
+      <li>ชั่วโมงทำงานรายวัน</li>
+      <li>ชั่วโมง OT รายวัน</li>
+      <li>+บาท / -บาท และหมายเหตุ</li>
+    </ul>
+    <p style="font-size:12px;color:#aaa;text-align:center;margin-bottom:1rem">รายชื่อพนักงานและสัปดาห์อื่นๆ ไม่ได้รับผลกระทบ</p>
+    <div class="modal-btns">
+      <button class="modal-cancel" onclick="hideClearConfirm()"><i class="ti ti-x" style="font-size:14px;vertical-align:-2px;margin-right:4px"></i>ยกเลิก</button>
+      <button class="modal-confirm" onclick="confirmClear()"><i class="ti ti-trash" style="font-size:14px;vertical-align:-2px;margin-right:4px"></i>ล้างข้อมูล</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function updateLogTotal() {
+  let total = 0; let count = 0;
+  document.querySelectorAll('#save-log-rows .log-emp-row').forEach(row => {
+    const cb = row.querySelector('input[type=checkbox]');
+    if (cb && cb.checked) {
+      total += parseFloat(row.dataset.pay) || 0;
+      count++;
+    }
+  });
+  const el = document.getElementById('save-log-total');
+  if (el) el.textContent = '฿' + Math.round(total).toLocaleString();
+  const cnt = document.getElementById('save-log-count');
+  if (cnt) cnt.textContent = count + ' คน';
+}
+
+function buildLogText(){
+  const week=document.getElementById('save-log-week').textContent;
+  const time=document.getElementById('save-log-time').textContent;
+  const total=document.getElementById('save-log-total').textContent;
+  const count=document.getElementById('save-log-count').textContent;
+  let rows='';
+  document.querySelectorAll('#save-log-rows .log-emp-row').forEach(row=>{
+    const cb = row.querySelector('input[type=checkbox]');
+    if (cb && !cb.checked) return;
+    const name=row.querySelector('span:first-child')?.textContent||'';
+    const detail=row.querySelectorAll('span')[1]?.textContent||'';
+    const pay=row.querySelector('[style*="font-weight:700"]')?.textContent||'';
+    rows+=`  ${name} ${pay}${detail?' ('+detail+')':''}\n`;
+  });
+  return `📋 สรุปค่าจ้าง\n${week}\n${time}\n${'─'.repeat(28)}\n${rows}${'─'.repeat(28)}\nรวม ${count}: ${total}`;
+}
+
+function buildSummaryText(){
+  const week=document.getElementById('sum-week-label').textContent;
+  const total=document.getElementById('ss-total').textContent;
+  const ot=document.getElementById('ss-ot').textContent;
+  const sso=document.getElementById('ss-sso').textContent;
+  let rows='';
+  document.querySelectorAll('#summary-list .summary-row').forEach(row=>{
+    const name=row.querySelector('[style*="font-weight:700"],[style*="font-weight:600"]')?.textContent?.trim()||'';
+    const pay=row.querySelector('[style*="font-weight:700"][style*="white-space"]')?.textContent?.trim()||'';
+    const detail=row.querySelectorAll('div')[2]?.textContent?.trim()||'';
+    rows+=`  ${name.split(' ')[0]} ${pay}\n`;
+  });
+  return `💰 สรุปจ่ายเงิน\n${week}\n${'─'.repeat(28)}\n${rows}${'─'.repeat(28)}\nรวม: ${total}  OT: ${ot}  ปกส.: ${sso}`;
+}
+
+function copyText(txt,btn){
+  try{
+    const ta=document.createElement('textarea');
+    ta.value=txt;ta.style.position='fixed';ta.style.opacity='0';
+    document.body.appendChild(ta);ta.focus();ta.select();
+    document.execCommand('copy');document.body.removeChild(ta);
+    const orig=btn.innerHTML;
+    btn.innerHTML='<i class="ti ti-check" style="font-size:14px;vertical-align:-2px;margin-right:3px"></i>คัดลอกแล้ว!';
+    btn.style.background='#e8f5e9';btn.style.color='#2e7d32';btn.style.borderColor='#a5d6a7';
+    setTimeout(()=>{btn.innerHTML=orig;btn.style.background='';btn.style.color='';btn.style.borderColor='';},2000);
+  }catch(e){alert('คัดลอกไม่ได้ กรุณาคัดลอกด้วยตัวเอง:\n\n'+txt);}
+}
+
+function copyLogText(){copyText(buildLogText(),event.target.closest('button'));}
+function openSelectedPopup() {
+  const rows = [];
+  let total = 0;
+  document.querySelectorAll('#summary-list .summary-row').forEach(row => {
+    const cb = row.querySelector('input[type=checkbox]');
+    if (!cb || !cb.checked) return;
+    const name = row.querySelector('.avatar') ? row.querySelector('div[style*="font-weight:700"]') : null;
+    const nameEl = row.querySelector('div > div:first-child');
+    const payEl = row.querySelector('div[style*="font-size:16px"]');
+    const detailEl = row.querySelector('div[style*="font-size:11px"]');
+    const pay = parseFloat(row.dataset.pay) || 0;
+    total += pay;
+    rows.push({
+      name: nameEl ? nameEl.textContent.replace(/เดือน|วัน|ปกส\.|2สัปดาห์|OT เท่านั้น/g,'').trim() : '',
+      detail: detailEl ? detailEl.textContent.trim() : '',
+      pay
+    });
+  });
+  if (rows.length === 0) { alert('กรุณาเลือกพนักงานก่อน'); return; }
+  let html = '';
+  rows.forEach(r => {
+    html += `<div style="display:flex;justify-content:space-between;align-items:flex-start;padding:8px 0;border-bottom:1px solid #f0f0f0">
+      <div>
+        <div style="font-size:13px;font-weight:600;color:#1a1a1a">${r.name}</div>
+        <div style="font-size:11px;color:#aaa;margin-top:2px">${r.detail}</div>
+      </div>
+      <div style="font-size:15px;font-weight:700;color:#1a1a1a;white-space:nowrap;margin-left:12px">฿${Math.round(r.pay).toLocaleString()}</div>
+    </div>`;
+  });
+  document.getElementById('selected-summary-rows').innerHTML = html;
+  document.getElementById('selected-summary-total').textContent = '฿' + Math.round(total).toLocaleString();
+  document.getElementById('selected-summary-count').textContent = rows.length + ' คน';
+  document.getElementById('selected-summary-week').textContent = document.getElementById('sum-week-label').textContent;
+  document.getElementById('selected-summary-modal').classList.add('show');
+}
+
+function copySelectedSummary() {
+  const weekLabel = document.getElementById('sum-week-label').textContent;
+  let txt = weekLabel + '\n';
+  txt += '─'.repeat(28) + '\n';
+  document.querySelectorAll('#selected-summary-rows > div').forEach(row => {
+    const name = row.querySelector('div:first-child div:first-child').textContent.trim();
+    const pay = row.querySelector('div:last-child').textContent.trim();
+    txt += `${name}  ${pay}\n`;
+  });
+  txt += '─'.repeat(28) + '\n';
+  txt += 'รวม  ' + document.getElementById('selected-summary-total').textContent;
+  try {
+    navigator.clipboard.writeText(txt);
+    alert('คัดลอกแล้ว!');
+  } catch(e) { alert('คัดลอกไม่ได้:\n\n' + txt); }
+}
+
+function copySummaryText(){copyText(buildSummaryText(),event.target.closest('button'));}
+
+function showClearConfirm(){
+  document.getElementById('modal-week-text').textContent='สัปดาห์ '+weekDateRange(currentWeekStart);
+  document.getElementById('clear-modal').classList.add('show');
+}
+function hideClearConfirm(){
+  document.getElementById('clear-modal').classList.remove('show');
+}
+function confirmClear(){
+  const key=weekKey(currentWeekStart);
+  delete weekData[key];
+  logAction('edit_workhrs',`ล้างข้อมูลสัปดาห์ ${weekDateRange(currentWeekStart)}`);
+  hideClearConfirm();
+  renderSchedule();
+  // ลบใน Google Sheets โดยตรงผ่าน deleteWeek
+  if(GAS_URL&&GAS_URL!=='YOUR_GOOGLE_APPS_SCRIPT_URL_HERE'){
+    setSyncStatus('☁️ กำลังล้างข้อมูลใน Cloud...','#e8f0fe');
+    const callId='del'+Date.now();const fn='_gc_'+callId;
+    let timer=setTimeout(()=>{setSyncStatus('❌ ล้างข้อมูล timeout','#ffebee');cleanup();},30000);
+    function cleanup(){clearTimeout(timer);delete window[fn];const el=document.getElementById('_gs_'+callId);if(el)el.remove();}
+    window[fn]=function(d){
+      cleanup();
+      if(d&&d.success){setSyncStatus('✅ ล้างข้อมูลสำเร็จ','#e8f5e9');setTimeout(()=>setSyncStatus('',''),2500);}
+      else{setSyncStatus('❌ ล้างข้อมูลไม่สำเร็จ','#ffebee');}
+    };
+    const s=document.createElement('script');s.id='_gs_'+callId;
+    s.src=`${GAS_URL}?action=deleteWeek&callback=${fn}&data=${encodeURIComponent(key)}&t=${Date.now()}`;
+    s.onerror=()=>{cleanup();setSyncStatus('❌ ล้างข้อมูลไม่สำเร็จ','#ffebee');};
+    document.head.appendChild(s);
+  }
+}
+document.getElementById('clear-modal').addEventListener('click',function(e){
+  if(e.target===this)hideClearConfirm();
+});
+</script>
+
+<script>
+const PIN_KEY='app_pin';
+let pinBuffer='';
+let pinMode='unlock';
+let pinNewTemp='';
+let pinTargetTab='';
+
+function pinHash(s){let h=0;for(let i=0;i<s.length;i++){h=(h<<5)-h+s.charCodeAt(i);h|=0;}return h.toString();}
+
+function updateDots(cls){
+  for(let i=0;i<6;i++){
+    const d=document.getElementById('d'+i);
+    d.className='pin-dot'+(i<pinBuffer.length?' filled':'')+(cls?' '+cls:'');
+  }
+}
+
+function pinPress(n){
+  if(pinBuffer.length>=6)return;
+  pinBuffer+=n;updateDots('');
+  document.getElementById('pin-error').textContent='';
+  if(pinBuffer.length===6)setTimeout(pinSubmit,120);
+}
+function pinDel(){pinBuffer=pinBuffer.slice(0,-1);updateDots('');document.getElementById('pin-error').textContent='';}
+
+function pinSubmit(){
+  const stored=localStorage.getItem(PIN_KEY);
+  if(pinMode==='setup'){
+    if(!pinNewTemp){
+      pinNewTemp=pinHash(pinBuffer);pinBuffer='';updateDots('');
+      document.getElementById('pin-title').textContent='ยืนยันรหัสอีกครั้ง';
+      document.getElementById('pin-sub').textContent='ใส่รหัส 6 หลักอีกครั้งเพื่อยืนยัน';
+    } else {
+      if(pinHash(pinBuffer)===pinNewTemp){
+        localStorage.setItem(PIN_KEY,pinNewTemp);
+        pinBuffer='';pinNewTemp='';
+        document.getElementById('pin-screen').classList.remove('show');
+        document.getElementById('pin-error').textContent='';
+        if(pinTargetTab)showTab(pinTargetTab);
+      } else {
+        pinBuffer='';pinNewTemp='';updateDots('error');
+        document.getElementById('pin-error').textContent='รหัสไม่ตรงกัน กรุณาตั้งใหม่';
+        document.getElementById('pin-title').textContent='ตั้งรหัส 6 หลัก';
+        document.getElementById('pin-sub').textContent='ตั้งรหัสเพื่อป้องกันข้อมูล';
+        setTimeout(()=>updateDots(''),600);
+      }
+    }
+  } else {
+    if(pinHash(pinBuffer)===stored){
+      pinBuffer='';
+      document.getElementById('pin-screen').classList.remove('show');
+      document.getElementById('pin-error').textContent='';
+      if(pinTargetTab)showTab(pinTargetTab);
+    } else {
+      pinBuffer='';updateDots('error');
+      document.getElementById('pin-error').textContent='รหัสไม่ถูกต้อง ลองอีกครั้ง';
+      setTimeout(()=>updateDots(''),600);
+    }
+  }
+}
+
+function showTabProtected(tab){
+  const stored=localStorage.getItem(PIN_KEY);
+  pinTargetTab=tab;pinBuffer='';updateDots('');
+  document.getElementById('pin-error').textContent='';
+  if(!stored){
+    pinMode='setup';
+    document.getElementById('pin-title').textContent='ตั้งรหัส 6 หลัก';
+    document.getElementById('pin-sub').textContent='ตั้งรหัสครั้งแรกเพื่อเข้าถึงเมนูนี้';
+    document.getElementById('pin-change-btn').style.display='none';
+  } else {
+    pinMode='unlock';
+    const names={'summary':'สรุปจ่ายเงินเสาร์','settings':'จัดการพนักงาน','permit':'ใบอนุญาตทำงาน'};
+    document.getElementById('pin-title').textContent='ใส่รหัสเพื่อเข้า';
+    document.getElementById('pin-sub').textContent=names[tab]||tab;
+    document.getElementById('pin-change-btn').style.display='';
+  }
+  document.getElementById('pin-screen').classList.add('show');
+}
+
+function pinForgot(){
+  const OWNER_KEY='Memokcp12445@';
+  const input=prompt('กรุณาใส่รหัสยืนยันเจ้าของก่อนรีเซ็ต:');
+  if(input===null)return;
+  if(input!==OWNER_KEY){alert('รหัสไม่ถูกต้อง ไม่สามารถรีเซ็ตได้');return;}
+  if(confirm('ยืนยันรีเซ็ตรหัสผ่าน? ข้อมูลพนักงานยังคงอยู่')){
+    localStorage.removeItem(PIN_KEY);
+    pinBuffer='';pinNewTemp='';pinMode='setup';updateDots('');
+    document.getElementById('pin-error').textContent='';
+    document.getElementById('pin-title').textContent='ตั้งรหัสใหม่';
+    document.getElementById('pin-sub').textContent='ตั้งรหัส 6 หลักใหม่';
+    document.getElementById('pin-change-btn').style.display='none';
+  }
+}
+document.getElementById('pin-screen').addEventListener('click',function(e){if(e.target===this){document.getElementById('pin-screen').classList.remove('show');pinBuffer='';updateDots('');}});
+
+document.addEventListener('keydown',function(e){
+  if(!document.getElementById('pin-screen').classList.contains('show'))return;
+  const numKeys=['0','1','2','3','4','5','6','7','8','9'];
+  const numpad={'Numpad0':'0','Numpad1':'1','Numpad2':'2','Numpad3':'3','Numpad4':'4','Numpad5':'5','Numpad6':'6','Numpad7':'7','Numpad8':'8','Numpad9':'9'};
+  if(numKeys.includes(e.key)){e.preventDefault();pinPress(e.key);}
+  else if(numpad[e.code]){e.preventDefault();pinPress(numpad[e.code]);}
+  else if(e.key==='Backspace'||e.key==='Delete'){e.preventDefault();pinDel();}
+  else if(e.key==='Escape'){document.getElementById('pin-screen').classList.remove('show');pinBuffer='';updateDots('');}
+});
+</script>
+
+<div class="modal-backdrop" id="zk-preview-modal">
+  <div class="modal-box" style="max-width:500px;width:95%">
+    <div class="modal-icon"><i class="ti ti-file-import" style="font-size:26px;color:#2e7d32"></i></div>
+    <div class="modal-title">ยืนยันนำเข้า ZKTime</div>
+    <div id="zk-preview-range" style="text-align:center;font-size:13px;color:#1a73e8;font-weight:600;background:#e8f0fe;border-radius:8px;padding:5px 12px;margin:8px 0"></div>
+    <div id="zk-preview-stats" style="display:flex;gap:8px;margin:10px 0;flex-wrap:wrap"></div>
+    <div style="font-size:12px;font-weight:600;color:#666;margin-bottom:6px">รายละเอียดรายคน</div>
+    <div id="zk-preview-table" style="max-height:260px;overflow-y:auto;border:1px solid #eee;border-radius:8px"></div>
+    <p style="font-size:11px;color:#aaa;text-align:center;margin:10px 0 4px">🔒 = วันที่มีข้อมูลอยู่แล้ว จะถูกข้ามไป | bonus/deduct/note ไม่มีผล</p>
+    <div class="modal-btns" style="margin-top:8px">
+      <button class="modal-cancel" onclick="closeZKPreview()"><i class="ti ti-x" style="font-size:14px;vertical-align:-2px;margin-right:4px"></i>ยกเลิก</button>
+      <button id="zk-confirm-btn" style="background:#2e7d32;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;padding:10px;flex:1;font-family:'Sarabun',sans-serif" onclick="confirmZKImport()"><i class="ti ti-check" style="font-size:14px;vertical-align:-2px;margin-right:4px"></i>ยืนยัน นำเข้า</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="late-detail-modal">
+  <div class="modal-box" style="max-width:520px;width:95%">
+    <div class="modal-title" id="late-detail-title" style="margin-bottom:12px">รายละเอียดหักสาย</div>
+    <div id="late-detail-body"></div>
+    <div class="modal-btns" style="margin-top:12px">
+      <button class="modal-cancel" onclick="closeLateDetail()" style="flex:1"><i class="ti ti-x" style="font-size:14px;vertical-align:-2px;margin-right:4px"></i>ปิด</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="quota-detail-modal">
+  <div class="modal-box" style="max-width:520px;width:95%">
+    <div class="modal-title" id="quota-detail-title" style="margin-bottom:12px">โควต้าลา/ขาด</div>
+    <div id="quota-detail-body"></div>
+    <div class="modal-btns" style="margin-top:12px">
+      <button class="modal-cancel" onclick="closeQuotaDetail()" style="flex:1"><i class="ti ti-x" style="font-size:14px;vertical-align:-2px;margin-right:4px"></i>ปิด</button>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
